@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-export PATH=$PATH:$HOME/server_proj/projview
-FILE_PATH=$HOME/server_proj/projview
+export PATH=$PATH:$HOME/smart_projector/server_proj/projview
+FILE_PATH=$HOME/smart_projector/server_proj/projview
 #echo "$PATH"
 
 # Function to get IP address using ip command
@@ -33,7 +33,7 @@ if [ -z "$IP_ADDR" ]; then
 fi
 
 # Path to the settings.py file
-SETTINGS_FILE="$FILE_PATH/settings.py"
+SETTINGS_FILE="$FILE_PATH/projview/settings.py"
 
 # Update the HOST_IP variable in settings.py
 sed -i "s/^HOST_IP = .*/HOST_IP = '$IP_ADDR'/" $SETTINGS_FILE

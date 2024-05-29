@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-!lfu4fbq^5sj97#xgbc6=ix4k&)dl+z17@emb#&qg@givn66=^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-HOST_IP = '192.168.1.5'
+HOST_IP = '192.168.1.7'
 
 ALLOWED_HOSTS = [
     #'https://ritam-barai.github.io',
