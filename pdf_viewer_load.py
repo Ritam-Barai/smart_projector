@@ -46,6 +46,9 @@ class PDFViewerLoad:
         self.canvas.config(width=self.page_width, height=self.page_height)
         self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + self.button_frame.winfo_height()}")
         
+        # Update thumbnail border
+        #self.update_thumbnail_border()
+        
         
     def next_page(self):
         if self.doc and self.current_page < self.doc.page_count - 1:
@@ -142,7 +145,7 @@ class PDFViewerLoad:
                     '''
             # Render the page to a temporary PNG file with the desired dimensions 
                     self.temp_file = os.path.join(self.temp_dir, f"page_{i}.png")
-                    self.render_page_to_png(page, width, self.temp_file)  # Set thumbnail width to 100 pixels
+                    self.render_page_to_png(page, width, self.temp_file)  # Set thumbnail width to 150 pixels
                     '''
                 if os.path.exists(self.temp_file):
                     print(f"The file {self.temp_file} exists.")
@@ -154,6 +157,7 @@ class PDFViewerLoad:
                     self.thumb_images.append(self.thumb_image)  # Keep the PhotoImage in memory
                 #print(self.thumb_image,self.image.width(),self.thumb_image.height())
                     self.page_number_text.append(str(i + 1))
+                    self.system_cache.append((self.temp_file,self.page_number_text[i]))
 
         # Display thumbnail on side panel canvas
                     image_id = self.side_panel_canvas.create_image(0, y_offset,anchor = 'nw', image=self.thumb_images[i])
@@ -161,7 +165,7 @@ class PDFViewerLoad:
                 
                 # Store the image and text IDs
                     self.thumbnail_items.append((image_id, text_id))
-                    print(self.thumbnail_items)
+                    print(self.system_cache)
 
         # Update y offset for next thumbnail
                     y_offset += self.thumb_image.height() + 20  # Add some padding between thumbnails

@@ -99,6 +99,7 @@ class PDFViewerInit:
         self.thumb_images = []  # Store PhotoImage objects to prevent them from being garbage collected
         self.page_number_text = []
         self.thumbnail_items = []
+        self.system_cache = []
         
         # Load or create the thumbnail cache file
         self.thumbnail_cache_file = "thumbnail_cache.pkl"
