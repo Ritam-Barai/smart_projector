@@ -17,6 +17,7 @@ from pdf_viewer_init import PDFViewerInit
 from pdf_viewer_load import PDFViewerLoad
 from pdf_viewer_annotate import PDFViewerAnnotate
 from pdf_viewer_cache import PDFViewerCache
+import os
 
 class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache):
     def __init__(self, root, default_pdf_path=None):
@@ -27,7 +28,11 @@ class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache):
 
 if __name__ == "__main__":
     root = tk.Tk()
-    default_pdf_path = "/home/ritam/smart_projector/server_proj/projview/pdf_view/static/fork-exec-notes.pdf"  # Set the default PDF path here
+    # Get the path to the home directory
+    home_dir = os.path.expanduser("~")
+    
+    default_pdf_path = os.path.join(home_dir, "smart_projector/server_proj/projview/pdf_view/static/fork-exec-notes.pdf")  # Set the default PDF path here
+    print(default_pdf_path)
     app = PDFViewer(root, default_pdf_path)
     app.run()
 '''

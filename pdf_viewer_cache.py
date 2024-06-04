@@ -66,5 +66,16 @@ class PDFViewerCache:
                 print("Cache cleared")
         except Exception as e:
             print(f"Error in release_thumbnail_cache: {e}")
+            
+    def clear_cache_file(self):
+        """Clears all contents of the specified cache file."""
+        try:
+            with open(self.thumbnail_cache_file, 'wb') as file:
+            # Opening the file in 'w' mode clears its contents
+                file.truncate(0)
+                self.thumbnail_cache = None
+            print(f"Cache file '{self.thumbnail_cache_file}' has been cleared.")
+        except Exception as e:
+            print(f"An error occurred while clearing the cache file: {e}")
 
 

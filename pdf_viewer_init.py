@@ -117,6 +117,8 @@ class PDFViewerInit:
         self.drawing_mode = False
         self.annotation_mode = False
         self.side_panel_visible = True
+        self.current_highlight = None  # Store the current highlighted thumbnail
+
         
         # Load the default PDF if provided
         if self.pdf_path:

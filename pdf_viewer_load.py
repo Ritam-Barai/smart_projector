@@ -10,15 +10,22 @@ import pickle
 class PDFViewerLoad:
 
     def load_pdf(self, path=None):
+        
         if path:
             self.pdf_path = path
         else:
             # Open file dialog to select PDF file
             self.pdf_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+            self.clear_cache_file()
+            print(self.thumbnail_cache)
 
         if self.pdf_path:
             # Open PDF document
             self.doc = fitz.open(self.pdf_path)
+            print(self.thumbnail_cache)
+            
+            self.clear_temp_directory()
+            print(os.listdir(self.temp_dir))
             self.current_page = 0
             self.show_page()
             self.show_side_panel()  # Display thumbnails in the side panel
@@ -105,7 +112,8 @@ class PDFViewerLoad:
         self.thumb_images.clear()  # Store PhotoImage objects to prevent them from being garbage collected
         self.page_number_text.clear()
         self.thumbnail_items.clear()
-        self.load_thumbnail_cache()
+        self.system_cache.clear()
+        #self.load_thumbnail_cache()
         #self.image_data.clear()
         
             
@@ -115,19 +123,19 @@ class PDFViewerLoad:
             if self.thumbnail_cache:
                 for index,self.image_data in enumerate(self.thumbnail_cache):
                     self.thumb_image = tk.PhotoImage(data=self.image_data["photoimage"])
-                    print("Image",self.thumb_image.height())
+                    #print("Image",self.thumb_image.height())
                     self.thumb_images.append(self.thumb_image)
                     #self.thumb_images[index] = self.thumb_image
                     
                     page_number_texts = self.image_data["page_number_text"]
                     self.page_number_text.append(page_number_texts)
                     
-                    print(self.thumb_images[index],index,self.page_number_text[index])
+                    #print(self.thumb_images[index],index,self.page_number_text[index])
                     image_id = self.side_panel_canvas.create_image(self.image_data["x"], self.image_data["y"], anchor="nw", image=self.thumb_images[index])
                     text_id = self.side_panel_canvas.create_text(self.image_data["x"] + self.thumb_images[index].width() // 2, self.image_data["y"] + self.thumb_images[index].height() + 5, anchor="n", text=page_number_texts)
                     self.thumbnail_items.append((image_id, text_id))
                 print("Running from cache")
-                print(self.thumb_images)
+                #print(self.thumb_images)
                     
             else:
             
@@ -171,6 +179,7 @@ class PDFViewerLoad:
                     y_offset += self.thumb_image.height() + 20  # Add some padding between thumbnails
              # Save the thumbnail cache
                 self.save_thumbnail_cache()
+                self.load_thumbnail_cache()
 
     # Update scroll region of side panel canvas
             self.side_panel_canvas.config(scrollregion=self.side_panel_canvas.bbox("all"))
@@ -182,4 +191,25 @@ class PDFViewerLoad:
         # Clean up temporary directory
             shutil.rmtree(self.temp_dir)
             print("Directory cleaned up")
+            
+
+    def clear_temp_directory(self):
+        """Clears all files and directories from the specified temporary directory."""
+        try:
+        # List all files and directories in the specified directory
+            for filename in os.listdir(self.temp_dir):
+                file_path = os.path.join(self.temp_dir, filename)
+                try:
+                # Check if it is a file or directory and remove accordingly
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)  # Remove the file or symbolic link
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)  # Remove the directory and its contents
+                except Exception as e:
+                    print(f"Failed to delete {file_path}. Reason: {e}")
+            print(f"All files and directories in '{self.temp_dir}' have been cleared.")
+        except Exception as e:
+            print(f"An error occurred while clearing the directory: {e}")
+
+
 
