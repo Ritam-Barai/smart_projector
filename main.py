@@ -19,6 +19,8 @@ from pdf_viewer_annotate import PDFViewerAnnotate
 from pdf_viewer_cache import PDFViewerCache
 import os
 
+os.environ['DISPLAY'] = 'localhost:10.0'  # Replace ':0.0' with your desired display
+
 class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache):
     def __init__(self, root, default_pdf_path=None):
         super().__init__(root, default_pdf_path)
@@ -30,7 +32,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     # Get the path to the home directory
     home_dir = os.path.expanduser("~")
-    os.environ['DISPLAY'] = ':0.0'  # Replace ':0.0' with your desired display
+
     
     default_pdf_path = os.path.join(home_dir, "smart_projector/server_proj/projview/pdf_view/static/fork-exec-notes.pdf")  # Set the default PDF path here
     print(default_pdf_path)
