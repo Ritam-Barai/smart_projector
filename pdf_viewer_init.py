@@ -2,6 +2,11 @@ import tkinter as tk
 from tkinter import filedialog, simpledialog
 import tempfile
 import atexit
+import threading
+import queue
+import subprocess
+import sys
+from multiprocessing import Process, Queue
 
 class PDFViewerInit:
     def __init__(self, root, default_pdf_path=None):
@@ -57,12 +62,6 @@ class PDFViewerInit:
         #self.main_frame.columnconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=1)  # Fixed width for side panel
         #self.main_frame.rowconfigure(2, weight=1) 
-        
-        
-
-        # Load PDF button
-        self.load_button = tk.Button(self.top_button_frame, text="Open PDF", command=self.load_pdf)
-        self.load_button.pack(side="left", padx=5, pady=5)
 
         # Previous page button
         self.prev_button = tk.Button(self.button_frame, text="<--", command=self.prev_page)
@@ -81,9 +80,18 @@ class PDFViewerInit:
         self.draw_button = tk.Button(self.button_frame, text="Draw", command=self.enable_drawing)
         self.draw_button.pack(side="left", padx=5, pady=5)
 
+        # Load PDF button
+        self.load_button = tk.Button(self.top_button_frame, text="Open PDF", command=self.load_pdf)
+        self.load_button.pack(side="left", padx=5, pady=5)
+
         # Close button
         self.close_button = tk.Button(self.top_button_frame, text="Close", command=root.quit)
         self.close_button.pack(side="right", padx=5, pady=5)
+
+        # Open Slideshow Button
+        self.slideshow_button = tk.Button(self.top_button_frame, text="Slideshow", command=self.toggle_slideshow)
+        self.slideshow_button.pack(side="left", padx=20, pady=5)
+
 
         # Bind mouse events
         self.canvas.bind("<Button-1>", self.canvas_click)
@@ -106,6 +114,11 @@ class PDFViewerInit:
         self.load_thumbnail_cache()
         atexit.register(self.release_thumbnail_cache)
 
+        # Load or create the slideshow cache file
+        self.slideshow_cache_file = "slideshow_cache.pkl"
+        self.load_slideshow_cache()
+        atexit.register(self.release_slideshow_cache)
+
         # Initialize variables
         self.pdf_path = default_pdf_path
         self.doc = None
@@ -114,10 +127,26 @@ class PDFViewerInit:
         self.start_y = None
         self.rect = None
         self.image = None  # Store a reference to the PhotoImage object
+        self.output = None
+        self.proc = None
+        self.pause_event = None
         self.drawing_mode = False
         self.annotation_mode = False
+        self.slideshow_mode = False
+        self.slideshow_process = False
         self.side_panel_visible = True
+        self.output_flag = False
         self.current_highlight = None  # Store the current highlighted thumbnail
+
+        # Instiatiate subprocess for slideshow
+        self.q = queue.Queue()
+        self.terminate_event = threading.Event()
+        # Start slides.py as a subprocess
+        self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
+        atexit.register(self.proc.terminate)
+        self.q.put("INIT")
+        self.slide_process()
+
 
         
         # Load the default PDF if provided

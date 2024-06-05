@@ -57,15 +57,51 @@ class PDFViewerCache:
 
         except Exception as e:
             print(f"Error in save_thumbnail_cache: {e}")
+
+    def load_slideshow_cache(self):
+        try:
+            with open(self.slideshow_cache_file, "rb") as f:
+                self.slideshow_cache = pickle.load(f)
+                print("New Cache Loaded")
+        except FileNotFoundError:
+            self.slideshow_cache = None
+
+    def save_slideshow_cache(self,slide_image):
+        try:
+            self.slide_data = {
+                "photoimage": slide_image,
+                "page_width": self.page_width,
+                "page_height": self.page_height,
+                "current_page": self.current_page,
+                "total_pages": self.doc.page_count
+            }
+            #print(self.slide_data)
+
+           # Save the updated cache
+            with open(self.slideshow_cache_file, "wb") as f:
+                f.truncate(0)
+                pickle.dump(self.slide_data, f)
+
+        except Exception as e:
+            print(f"Error in save_thumbnail_cache: {e}")
                     
     def release_thumbnail_cache(self):
         try:
             # Delete the cache file
             if os.path.exists(self.thumbnail_cache_file):
                 os.remove(self.thumbnail_cache_file)
-                print("Cache cleared")
+                print("Thumbnail cache cleared")
         except Exception as e:
             print(f"Error in release_thumbnail_cache: {e}")
+
+    def release_slideshow_cache(self):
+        try:
+            # Delete the cache file
+            if os.path.exists(self.slideshow_cache_file):
+                os.remove(self.slideshow_cache_file)
+                print("Slideshow cache cleared")
+        except Exception as e:
+            print(f"Error in release_slideshow_cache: {e}")        
             
     def clear_cache_file(self):
         """Clears all contents of the specified cache file."""

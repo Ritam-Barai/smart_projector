@@ -17,11 +17,13 @@ from pdf_viewer_init import PDFViewerInit
 from pdf_viewer_load import PDFViewerLoad
 from pdf_viewer_annotate import PDFViewerAnnotate
 from pdf_viewer_cache import PDFViewerCache
+from pdf_viewer_slides import PDFViewerSlides
+from pdf_viewer_process import PDFViewerProcess
 import os
 
-os.environ['DISPLAY'] = 'localhost:10.0'  # Replace ':0.0' with your desired display
 
-class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache):
+
+class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache,PDFViewerProcess):
     def __init__(self, root, default_pdf_path=None):
         super().__init__(root, default_pdf_path)
 
@@ -29,6 +31,7 @@ class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache):
         self.root.mainloop()
 
 if __name__ == "__main__":
+    os.environ['DISPLAY'] = ':1.0'  # Replace ':0.0' with your desired display
     root = tk.Tk()
     # Get the path to the home directory
     home_dir = os.path.expanduser("~")

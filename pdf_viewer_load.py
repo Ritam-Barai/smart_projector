@@ -6,6 +6,8 @@ import tempfile
 import shutil  # Import shutil module for file operations
 import atexit
 import pickle
+import subprocess
+import sys
 
 class PDFViewerLoad:
 
@@ -18,6 +20,7 @@ class PDFViewerLoad:
             self.pdf_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
             self.clear_cache_file()
             print(self.thumbnail_cache)
+            print(self.pdf_path)
 
         if self.pdf_path:
             # Open PDF document
@@ -30,6 +33,26 @@ class PDFViewerLoad:
             self.show_page()
             self.show_side_panel()  # Display thumbnails in the side panel
 
+    def slideshow_housekeep(self):
+        if not self.slideshow_process:
+            self.slideshow_mode = False
+            self.slideshow_button.config(bg="lightgray")
+            self.terminate()
+            self.pause_event.clear()
+            self.new_slideshow()
+            
+    
+    def new_slideshow(self):
+        while not self.q.empty():
+            try:
+                self.q.get_nowait()
+            except queue.Empty:
+                break
+        self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
+        atexit.register(self.proc.terminate)
+        self.q.put('INIT')
+        self.slide_process()  
+
     def show_page(self):
         # Clear canvas
         self.canvas.delete("all")
@@ -37,9 +60,10 @@ class PDFViewerLoad:
         # Load current page
         page = self.doc.load_page(self.current_page)
         pix = page.get_pixmap()
+        page_string = pix.tobytes("ppm")
 
         # Create PhotoImage from Pixmap
-        self.image = tk.PhotoImage(data=pix.tobytes("ppm"))
+        self.image = tk.PhotoImage(data=page_string)
         print("Page",self.image)
 
         # Display page on canvas
@@ -52,17 +76,25 @@ class PDFViewerLoad:
         self.page_width, self.page_height = pix.width, pix.height
         self.canvas.config(width=self.page_width, height=self.page_height)
         self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + self.button_frame.winfo_height()}")
+        #slide_string = self.png_to_base64_string(os.path.join(os.getcwd(),self.image))
+        #print("binary",slide_string)
+        self.save_slideshow_cache(page_string)
+        self.load_slideshow_cache()
+        if self.slideshow_process:
+            self.q.put('SHOW')
+            self.slide_process()
+        #print(self.slideshow_cache)
         
         # Update thumbnail border
         #self.update_thumbnail_border()
         
         
-    def next_page(self):
+    def next_page(self,event = None):
         if self.doc and self.current_page < self.doc.page_count - 1:
             self.current_page += 1
             self.show_page()
 
-    def prev_page(self):
+    def prev_page(self,event = None):
         if self.doc and self.current_page > 0:
             self.current_page -= 1
             self.show_page()
@@ -173,7 +205,7 @@ class PDFViewerLoad:
                 
                 # Store the image and text IDs
                     self.thumbnail_items.append((image_id, text_id))
-                    print(self.system_cache)
+                    #print(self.system_cache)
 
         # Update y offset for next thumbnail
                     y_offset += self.thumb_image.height() + 20  # Add some padding between thumbnails

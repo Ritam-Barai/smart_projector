@@ -1,4 +1,6 @@
 from tkinter import simpledialog
+import subprocess
+import sys
 
 class PDFViewerAnnotate:
     def enable_text_annotation(self):
@@ -24,6 +26,38 @@ class PDFViewerAnnotate:
             self.drawing_mode = True
             self.annotate_button.config(bg="lightgray")
             self.draw_button.config(bg="yellow")
+
+    def toggle_slideshow(self):
+        if self.slideshow_process:
+            self.slideshow_process = False
+            self.slideshow_mode = False
+            self.slideshow_button.config(bg="lightgray")
+            self.q.put('STOP')
+            #self.proc.wait()
+            self.slide_process()
+            '''
+        elif self.slideshow_mode and not self.slideshow_process:
+        # If slideshow is already active, switch it off
+            self.slideshow_mode = False
+            self.slideshow_button.config(bg="lightgray")
+            self.terminate()
+            self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
+            self.q.put('INIT')
+            self.slide_process()
+            #self.p.join()
+            '''
+        elif not self.slideshow_mode:
+        # If slideshow is not active, switch it on
+            self.slideshow_mode = True
+            self.slideshow_process = True
+            self.slideshow_button.config(bg="yellow") 
+            #self.q.put('START')
+            self.q.put('START')
+            self.slide_process()
+            
+            #self.open_slideshow_window()  
+
+    
 
     def canvas_click(self, event):
         if self.annotation_mode:
