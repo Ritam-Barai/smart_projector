@@ -13,6 +13,7 @@ if __name__ == "__main__":
 
 '''
 import tkinter as tk
+from tkinter import filedialog
 from pdf_viewer_init import PDFViewerInit
 from pdf_viewer_load import PDFViewerLoad
 from pdf_viewer_annotate import PDFViewerAnnotate
@@ -30,14 +31,26 @@ class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache,P
     def run(self):
         self.root.mainloop()
 
+def upload_pdf_dialog():
+    pdf_path = tk.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+    '''
+    if pdf_path:
+        app.load_pdf(pdf_path)
+        app.run()
+        '''
+
 if __name__ == "__main__":
     os.environ['DISPLAY'] = ':1.0'  # Replace ':0.0' with your desired display
     root = tk.Tk()
+    pdf_path = tk.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+    #root.withdraw()
     # Get the path to the home directory
     home_dir = os.path.expanduser("~")
 
-    
-    default_pdf_path = os.path.join(home_dir, "smart_projector/server_proj/projview/pdf_view/static/fork-exec-notes.pdf")  # Set the default PDF path here
+    if pdf_path:
+        default_pdf_path = pdf_path
+    else:
+        default_pdf_path = os.path.join(home_dir, "smart_projector/pdf_docs/fork-exec-notes.pdf")  # Set the default PDF path here
     print(default_pdf_path)
     app = PDFViewer(root, default_pdf_path)
     app.run()
