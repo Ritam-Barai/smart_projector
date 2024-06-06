@@ -3,6 +3,7 @@ import os
 from tkinter import *
 import base64
 import io
+import sys
 
 class PDFViewerCache:
     def load_thumbnail_cache(self):
@@ -40,6 +41,7 @@ class PDFViewerCache:
                 image_id, text_id = self.thumbnail_items[i]
                 print(thumb_image)
                 thumb_string = self.png_to_base64_string(thumb_image)
+                print(sys.getsizeof(thumb_string))
                 #print("binary",thumb_string)
                 self.image_data = {
                     "x": self.side_panel_canvas.coords(image_id)[0],

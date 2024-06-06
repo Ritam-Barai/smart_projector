@@ -8,6 +8,8 @@ import atexit
 import pickle
 import subprocess
 import sys
+from PIL import Image, ImageTk,ImageEnhance
+import io
 
 class PDFViewerLoad:
 
@@ -30,8 +32,9 @@ class PDFViewerLoad:
             self.clear_temp_directory()
             print(os.listdir(self.temp_dir))
             self.current_page = 0
-            self.show_page()
+            
             self.show_side_panel()  # Display thumbnails in the side panel
+            self.show_page()
 
     def slideshow_housekeep(self):
         if not self.slideshow_process:
@@ -61,21 +64,55 @@ class PDFViewerLoad:
         page = self.doc.load_page(self.current_page)
         pix = page.get_pixmap()
         page_string = pix.tobytes("ppm")
+        print(sys.getsizeof(page_string))
 
+        '''
         # Create PhotoImage from Pixmap
         self.image = tk.PhotoImage(data=page_string)
         print("Page",self.image)
 
         # Display page on canvas
         self.canvas.create_image(0, 0, anchor="nw", image=self.image)
+        '''
 
         # Update window title
         self.root.title(f"PDF Viewer - Page {self.current_page + 1}/{self.doc.page_count}")
 
         # Get page dimensions and resize window and canvas
         self.page_width, self.page_height = pix.width, pix.height
-        self.canvas.config(width=self.page_width, height=self.page_height)
-        self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + self.button_frame.winfo_height()}")
+        self.fullscreen_width = self.main_frame.winfo_screenwidth()
+        self.fullscreen_height = self.main_frame.winfo_screenheight()
+        self.button_frame_height = self.button_frame.winfo_height()
+        #print(self.button_frame.winfo_height(),self.canvas.winfo_height(),self.main_frame.winfo_height())
+
+        # Resize the canvas
+        scale_factor = min(( self.fullscreen_width // 2) /  self.page_width, (self.fullscreen_height// 2) / self.page_height )
+        scale_factor = max(scale_factor,1)
+        
+        self.page_width = int(self.page_width * scale_factor)
+        self.page_height = int(self.page_height  * scale_factor)  
+        print(scale_factor, self.page_width, self.page_height)
+        #self.button_frame_height = int(self.button_frame_height / scale_factor)  
+
+        self.canvas.config(width=self.page_width, height=self.page_height  )
+        print(self.page_width,self.page_height,self.button_frame.winfo_height())
+        self.main_frame.config(width=self.page_width , height= self.page_height  + 2 * self.button_frame.winfo_height() )
+        self.main_frame.update_idletasks()
+        self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2 * self.button_frame.winfo_height()}")
+        #self.root.update()
+        #self.main_frame.update_idletasks()  # Ensure that the canvas is resized before displaying the image
+
+        self.pil_image = Image.open(io.BytesIO(page_string))
+        resized_image = self.pil_image.resize((self.page_width,self.page_height), Image.BICUBIC)
+
+        enhancer = ImageEnhance.Sharpness(resized_image)
+        resized_image = enhancer.enhance(5.0)  # Increase sharpness by a factor of 2.0
+        
+        
+        self.image = ImageTk.PhotoImage(resized_image)
+        self.canvas.create_image(0, 0 , anchor="nw", image=self.image)
+        
+        
         #slide_string = self.png_to_base64_string(os.path.join(os.getcwd(),self.image))
         #print("binary",slide_string)
         self.save_slideshow_cache(page_string)
@@ -86,7 +123,7 @@ class PDFViewerLoad:
         #print(self.slideshow_cache)
         
         # Update thumbnail border
-        #self.update_thumbnail_border()
+        self.thumbnail_highlight()
         
         
     def next_page(self,event = None):
@@ -115,12 +152,12 @@ class PDFViewerLoad:
             self.side_panel_frame.grid_remove()  # Hide the side panel
             self.toggle_button_text.set("Show Side Panel")
             self.side_panel_width = 0
-            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + self.button_frame.winfo_height()}")
+            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2* self.button_frame.winfo_height()}")
         else:
             self.side_panel_frame.grid()  # Show the side panel
             self.toggle_button_text.set("Hide Side Panel")
             self.side_panel_width = 200
-            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + self.button_frame.winfo_height()}")
+            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2* self.button_frame.winfo_height()}")
             self.show_side_panel()  # Display thumbnails in the side panel
         self.side_panel_visible = not self.side_panel_visible
         
@@ -172,7 +209,7 @@ class PDFViewerLoad:
             else:
             
                 # Display thumbnails of all pages
-                y_offset = 0
+                y_offset = 20
                 width = 150
                 padding_x = 20        
                 for i in range(self.doc.page_count):
@@ -218,6 +255,31 @@ class PDFViewerLoad:
         
         except Exception as e:
             print(f"Error in show_side_panel: {e}")
+
+        finally:    
+            # Highlight the selected thumbnail
+            self.thumbnail_highlight()
+
+    def thumbnail_highlight(self):
+        # Highlight the selected thumbnail
+        
+        for i, (image_id, text_id) in enumerate(self.thumbnail_items):
+            border_id = "Border" + str(i)
+            image_bbox = self.side_panel_canvas.bbox(image_id)
+            if image_bbox is not None:
+                x_start, y_start, x_end, y_end = image_bbox
+            if i == self.current_page:
+                self.side_panel_canvas.create_rectangle(x_start, y_start, x_end, y_end, outline="red", width=3,tags=border_id)
+                print("Border",border_id)
+                #self.side_panel_canvas.itemconfig(self.thumb_images[i], outline="red", width=3)
+                self.side_panel_canvas.itemconfig(text_id, fill="red")
+            elif self.side_panel_canvas.find_withtag(border_id):
+                self.side_panel_canvas.delete(border_id)
+                #self.current_highlight = self.current_page
+                self.side_panel_canvas.itemconfig(text_id, fill="black")
+
+        #self.side_panel_canvas.delete(border_id)
+        
             
     def cleanup_temp_dir(self):
         # Clean up temporary directory

@@ -136,7 +136,7 @@ class PDFViewerInit:
         self.slideshow_process = False
         self.side_panel_visible = True
         self.output_flag = False
-        self.current_highlight = None  # Store the current highlighted thumbnail
+        #self.current_highlight = None  # Store the current highlighted thumbnail
 
         # Instiatiate subprocess for slideshow
         self.q = queue.Queue()

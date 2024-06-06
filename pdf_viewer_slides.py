@@ -1,5 +1,5 @@
 import tkinter as tk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageEnhance
 from tkinter.font import Font
 import io
 from pdf_viewer_cache import PDFViewerCache
@@ -109,7 +109,9 @@ class PDFViewerSlides:
             
 
             # Resize the image
-            resized_image = self.pil_image.resize((int(page_width * scale_factor),int(page_height * scale_factor)), Image.LANCZOS)
+            resized_image = self.pil_image.resize((int(page_width * scale_factor),int(page_height * scale_factor)), Image.BICUBIC)
+            enhancer = ImageEnhance.Sharpness(resized_image)
+            resized_image = enhancer.enhance(10.0)  # Increase sharpness by a factor of 2.0
 
             # Update the canvas size
             self.slideshow_canvas.config(width=int(page_width * scale_factor), height=int(page_height * scale_factor))
