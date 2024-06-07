@@ -6,12 +6,14 @@ import threading
 import queue
 import subprocess
 import sys
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Array
+import ctypes
 
 class PDFViewerInit:
     def __init__(self, root, default_pdf_path=None):
         self.root = root
         self.root.title("PDF Viewer")
+        
         
         # Main frame to hold canvas and buttons
         self.main_frame = tk.Frame(root)
@@ -92,11 +94,17 @@ class PDFViewerInit:
         self.slideshow_button = tk.Button(self.top_button_frame, text="Slideshow", command=self.toggle_slideshow)
         self.slideshow_button.pack(side="left", padx=20, pady=5)
 
+        # Pointer Button
+        self.pointer_button = tk.Button(self.top_button_frame, text="Pointer", command=self.toggle_pointer)
+        self.pointer_button.pack(side="left", padx=5, pady=5)
+        self.pointer_button.config(state=tk.DISABLED)
+
 
         # Bind mouse events
         self.canvas.bind("<Button-1>", self.canvas_click)
         self.canvas.bind("<B1-Motion>", self.canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.canvas_release)
+        
         # Bind click events to each page number text item
         self.side_panel_canvas.bind("<Button-1>", self.side_panel_canvas_click)
         
@@ -132,20 +140,32 @@ class PDFViewerInit:
         self.pause_event = None
         self.drawing_mode = False
         self.annotation_mode = False
-        self.slideshow_mode = False
+        
+        self.slideshow_active = False
+        self.pointer_mode = False
         self.slideshow_process = False
         self.side_panel_visible = True
         self.output_flag = False
         #self.current_highlight = None  # Store the current highlighted thumbnail
 
+        #Instatiate pointer position
+        self.pointer_position = Array(ctypes.c_int, [9999, 9999]) #9999 signifies empty array
+        self.canvas.bind("<Motion>",  self.track_mouse)
+
         # Instiatiate subprocess for slideshow
         self.q = queue.Queue()
         self.terminate_event = threading.Event()
+        
         # Start slides.py as a subprocess
         self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
         atexit.register(self.proc.terminate)
-        self.q.put("INIT")
+        
+        self.flag_condition = threading.Condition()
+        self.coord_condition = threading.Condition()
+        self.flag_lock = threading.Lock()
         self.slide_process()
+        #self.handle_new_flag("INIT")
+        
 
 
         

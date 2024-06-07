@@ -1,6 +1,8 @@
 from tkinter import simpledialog
 import subprocess
 import sys
+import time
+
 
 class PDFViewerAnnotate:
     def enable_text_annotation(self):
@@ -27,14 +29,55 @@ class PDFViewerAnnotate:
             self.annotate_button.config(bg="lightgray")
             self.draw_button.config(bg="yellow")
 
+    def toggle_pointer(self):
+        if self.slideshow_active:
+            self.pointer_mode = not self.pointer_mode
+            self.pointer_button.config(bg="yellow" if self.pointer_mode else "lightgray")
+            self.handle_new_flag("POINT")
+        else:
+            self.pointer_mode = False
+            self.pointer_button.config(bg="lightgray")
+        
+        self.update_pointer_status()
+
+    
+    def update_pointer_status(self):
+        border_id = "Border_Canvas" 
+        if self.pointer_mode and self.slideshow_active:
+            canvas_bbox = self.canvas.bbox(self.canvas_id)
+            if canvas_bbox is not None:
+                x_start, y_start, x_end, y_end = canvas_bbox
+                self.canvas.create_rectangle(x_start, y_start, x_end, y_end, outline="red", width=5,tags=border_id)
+        
+        else:
+            if self.canvas.find_withtag(border_id):
+                self.canvas.delete(border_id)
+            
+            
+        
+            
+        
+
+    def track_mouse(self, event):
+        if self.pointer_mode:
+            # Update the pointer position
+            self.pointer_position[0] = event.x
+            self.pointer_position[1] = event.y
+            #print(list(self.pointer_position))
+            time.sleep(0.1)
+            if self.slideshow_active:
+                #print(list(self.pointer_position))
+                with self.coord_condition:
+                    self.coord_condition.notify()
+
+
     def toggle_slideshow(self):
         if self.slideshow_process:
             self.slideshow_process = False
-            self.slideshow_mode = False
+            #self.slideshow_mode = False
             self.slideshow_button.config(bg="lightgray")
-            self.q.put('STOP')
-            #self.proc.wait()
-            self.slide_process()
+            self.handle_new_flag("STOP")
+            
             '''
         elif self.slideshow_mode and not self.slideshow_process:
         # If slideshow is already active, switch it off
@@ -46,14 +89,14 @@ class PDFViewerAnnotate:
             self.slide_process()
             #self.p.join()
             '''
-        elif not self.slideshow_mode:
+        else:
         # If slideshow is not active, switch it on
-            self.slideshow_mode = True
+            #self.slideshow_mode = True
             self.slideshow_process = True
             self.slideshow_button.config(bg="yellow") 
             #self.q.put('START')
-            self.q.put('START')
-            self.slide_process()
+            self.handle_new_flag("START")
+            
             
             #self.open_slideshow_window()  
 
@@ -140,4 +183,6 @@ class PDFViewerAnnotate:
             # Update starting coordinates
             self.start_x = event.x
             self.start_y = event.y
+
+    
 

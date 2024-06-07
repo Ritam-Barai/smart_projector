@@ -1,19 +1,27 @@
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Array
+import ctypes
 import subprocess
 import sys
 import threading
 import select
 import time
+import tkinter
 
 
 class PDFViewerProcess:
     
     def terminate(self):
         
-        self.terminate_event.set()
+        for thread in threading.enumerate():
+            print("Cleaning:",thread.getName())
+        
+        self.terminate_event.clear()
         #self.output_thread.join()
         #self.flag_thread.join()
         self.cleanup()
+        for thread in threading.enumerate():
+            print("Clean Reamaining:",thread.getName())
+        self.terminate_event.clear()
 
     def slide_process(self):
 
@@ -47,12 +55,45 @@ class PDFViewerProcess:
         self.flag_thread = threading.Thread(target=self.send_flags)
         self.flag_thread.daemon = True
         self.flag_thread.start()
+        
+        self.coord_thread = threading.Thread(target=self.send_coords)
+        self.coord_thread.daemon = True
+        self.coord_thread.start()
+        
+
+
 
         
         
-        #self.output_thread.join()
-        #self.flag_thread.join()
-        
+
+
+    def send_coords(self):
+        print(threading.current_thread().getName())
+        while not self.terminate_event.is_set():
+            if self.proc.poll() is not None:
+                break
+
+            with self.coord_condition:
+                while  list(self.pointer_position) == [9999,9999] and not self.terminate_event.is_set():
+                    self.coord_condition.wait()
+
+                if self.terminate_event.is_set():
+                    break
+
+                coord = list(self.pointer_position)
+                coord_str = ' '.join(str(e) for e in coord)
+                self.proc.stdin.write(coord_str + '\n')
+                self.proc.stdin.flush()
+                print(f'Sent coord: {coord_str}')
+                self.pointer_position = Array(ctypes.c_int, [9999, 9999]) #9999 signifies empty array
+
+                print("Done")
+                
+                #self.proc.communicate()
+                #time.sleep(0)
+                #self.cleanup()
+            
+
 
         
 
@@ -63,23 +104,47 @@ class PDFViewerProcess:
             self.output_thread.start()
         '''
         
+    def handle_new_flag(self, flag):
+        with self.flag_condition:
+            self.q.put(flag)
+            self.flag_condition.notify()
+
+        
 
     def send_flags(self):
-        while True:
+        print(threading.current_thread().getName())
+        while not self.terminate_event.is_set():
             if self.proc.poll() is not None:
                 break
 
-            if not self.q.empty():
+               
+            print("Test",threading.current_thread().getName())
+            with self.flag_condition:
+                while self.q.empty() and not self.terminate_event.is_set():
+                    self.flag_condition.wait()
+
+                if self.terminate_event.is_set():
+                    break
+
                 flag = self.q.get()
+            
                 self.proc.stdin.write(flag + '\n')
                 self.proc.stdin.flush()
                 print(f'Sent flag: {flag}')
-                self.proc.wait()
-                
+                #self.flag_thread.join()
+                #self.proc.wait()
                 #self.proc.communicate()
+                print("Done")
+                #time.sleep(0)
+                
+            if self.proc.poll() is not None:
+                break  
+               
+                #
                 #time.sleep(0)
                 #self.cleanup()
-
+        #self.cleanup()
+        
             
 
         '''
@@ -148,7 +213,7 @@ class PDFViewerProcess:
     def read_output(self):
         self.output = None
         self.output_flag = False
-        self.pause_event.set()
+        self.pause_event.wait()
         while True:
             # Check if there's a message from the subprocess
             if self.proc.poll() is not None:
@@ -161,47 +226,82 @@ class PDFViewerProcess:
             if self.output:
                 print(f'Received flag: {self.output}')
                 self.handle_output()
-                time.sleep(0)
+                #time.sleep(0)
                 '''
                 if self.output_flag:
                     break'''
                 
         
     def load_output_process(self):
-        #print("Output thread finished")
+        print("Undertaking Action....")
+        
+        if threading.current_thread().getName() != 'MainThread':
+            return
+        print(threading.current_thread().getName())
         if self.pause_event.is_set():
-            print("process:",self.proc.poll())
+            print("Sub-process Error:",self.proc.poll())
             if self.output_flag:
                 if self.output == '<Left>':
                     self.prev_page()
                 elif self.output == '<Right>':
                     self.next_page()
                 elif self.output == '<Escape>':
+                    print("SlideShow Terminated")
+                    
                     self.slideshow_process = False
-                    #self.slideshow_mode = True
+                    self.slideshow_active = False
+                    self.pointer_button.config(state=tkinter.DISABLED)
+                    self.toggle_pointer()
+                    
+                    self.pause_event.clear()
                     self.slideshow_housekeep()
                 elif self.output == 'LOAD':
-                    self.show_page()
+                    print("SlideShow Active")
+                    self.slideshow_active = True
+                    self.pointer_button.config(state=tkinter.NORMAL)
 
             self.output_flag = False
-            self.pause_event.clear()
+            
         #self.cleanup()
                 
     def cleanup(self):
+        self.terminate_event.set() 
+        print(threading.current_thread().getName())
+        self.proc.terminate()
         
-        if self.proc and self.proc.poll() is not None:
-            self.proc.terminate()
-            self.proc.wait()
-            print("Subprocess terminated.")
+        self.proc.wait()
+        print("Subprocess terminated.")
+        
+        #if self.proc and self.proc.poll() is None:
+        self.output_thread.join()
+        print("Output thread finished")  
+
+        with self.flag_condition:
+            self.flag_condition.notify()
+        self.flag_thread.join()
+        #time.sleep(0)
+        print("Flag thread finished")
+
+        with self.coord_condition:
+            self.coord_condition.notify()
+        self.coord_thread.join()
+        print("Pointer thread finished")
+
+
+        self.terminate_event.clear()
+
+        #if self.output_thread and self.output_thread.is_alive():
+            
         
 
-        if self.output_thread and self.output_thread.is_alive():
-            self.output_thread.join()
-            print("Output thread finished")
+        #if self.flag_thread and self.flag_thread.is_alive():
+            #self.condition.clear()
+            
 
-        if self.flag_thread and self.flag_thread.is_alive():
-            self.flag_thread.join()
-            print("Flag thread finished")
+        '''
+        if self.coord_thread and self.coord_thread.is_alive():
+            self.coord_thread.join()
+            print("Coord thread finished")'''
 
     '''
     def start(self):
@@ -241,8 +341,16 @@ class PDFViewerProcess:
             #print(f'Unknown flag: {self.output}')
             self.output_flag = False
 
-        print(self.output_flag)
-        self.root.after(1,self.load_output_process)
+        print("Action Received:", self.output_flag)
+        if(self.output_flag):
+            print(self.output_thread.getName())
+            print("Done loading")
+            self.root.after(0,self.load_output_process)
+            
+
+        
+        
+        
 
         
             

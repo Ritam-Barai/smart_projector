@@ -73,7 +73,7 @@ class PDFViewerCache:
             self.slide_data = {
                 "photoimage": slide_image,
                 "page_width": self.page_width,
-                "page_height": self.page_height,
+                "page_height": self.page_height + self.frame_height,
                 "current_page": self.current_page,
                 "total_pages": self.doc.page_count
             }
@@ -83,6 +83,8 @@ class PDFViewerCache:
             with open(self.slideshow_cache_file, "wb") as f:
                 f.truncate(0)
                 pickle.dump(self.slide_data, f)
+
+            print("Slideshow cache saved", self.frame_height)
 
         except Exception as e:
             print(f"Error in save_thumbnail_cache: {e}")

@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog,font
 import fitz  # PyMuPDF
 import os
 import tempfile
@@ -38,7 +38,8 @@ class PDFViewerLoad:
 
     def slideshow_housekeep(self):
         if not self.slideshow_process:
-            self.slideshow_mode = False
+            #self.pointer_mode = False
+            #self.toggle_pointer()
             self.slideshow_button.config(bg="lightgray")
             self.terminate()
             self.pause_event.clear()
@@ -53,8 +54,10 @@ class PDFViewerLoad:
                 break
         self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
         atexit.register(self.proc.terminate)
-        self.q.put('INIT')
-        self.slide_process()  
+        self.slide_process()
+        #self.handle_new_flag("INIT")
+        #self.q.put('INIT')
+        #self.slide_process()  
 
     def show_page(self):
         # Clear canvas
@@ -99,6 +102,8 @@ class PDFViewerLoad:
         self.main_frame.config(width=self.page_width , height= self.page_height  + 2 * self.button_frame.winfo_height() )
         self.main_frame.update_idletasks()
         self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2 * self.button_frame.winfo_height()}")
+        self.frame_height = self.button_frame.winfo_height()
+        self.root.resizable(False, False)
         #self.root.update()
         #self.main_frame.update_idletasks()  # Ensure that the canvas is resized before displaying the image
 
@@ -110,7 +115,7 @@ class PDFViewerLoad:
         
         
         self.image = ImageTk.PhotoImage(resized_image)
-        self.canvas.create_image(0, 0 , anchor="nw", image=self.image)
+        self.canvas_id = self.canvas.create_image(0, 0 , anchor="nw", image=self.image)
         
         
         #slide_string = self.png_to_base64_string(os.path.join(os.getcwd(),self.image))
@@ -118,8 +123,11 @@ class PDFViewerLoad:
         self.save_slideshow_cache(page_string)
         self.load_slideshow_cache()
         if self.slideshow_process:
-            self.q.put('SHOW')
-            self.slide_process()
+            self.slideshow_process = True
+            self.handle_new_flag("SHOW")
+        self.update_pointer_status()
+            #self.q.put('SHOW')
+            #self.slide_process()
         #print(self.slideshow_cache)
         
         # Update thumbnail border
@@ -153,11 +161,13 @@ class PDFViewerLoad:
             self.toggle_button_text.set("Show Side Panel")
             self.side_panel_width = 0
             self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2* self.button_frame.winfo_height()}")
+            self.root.resizable(False, False)
         else:
             self.side_panel_frame.grid()  # Show the side panel
             self.toggle_button_text.set("Hide Side Panel")
             self.side_panel_width = 200
             self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2* self.button_frame.winfo_height()}")
+            self.root.resizable(False, False)
             self.show_side_panel()  # Display thumbnails in the side panel
         self.side_panel_visible = not self.side_panel_visible
         
@@ -266,17 +276,21 @@ class PDFViewerLoad:
         for i, (image_id, text_id) in enumerate(self.thumbnail_items):
             border_id = "Border" + str(i)
             image_bbox = self.side_panel_canvas.bbox(image_id)
+            current_font = font.Font(font = self.side_panel_canvas.itemcget(text_id, "font"))
             if image_bbox is not None:
                 x_start, y_start, x_end, y_end = image_bbox
             if i == self.current_page:
-                self.side_panel_canvas.create_rectangle(x_start, y_start, x_end, y_end, outline="red", width=3,tags=border_id)
+                self.side_panel_canvas.create_rectangle(x_start, y_start, x_end, y_end, outline="black", width=3,tags=border_id)
                 print("Border",border_id)
+                
+                
                 #self.side_panel_canvas.itemconfig(self.thumb_images[i], outline="red", width=3)
-                self.side_panel_canvas.itemconfig(text_id, fill="red")
+                self.side_panel_canvas.itemconfig(text_id, font=("TkDefaultFont", current_font.cget("size"), "bold"))
             elif self.side_panel_canvas.find_withtag(border_id):
                 self.side_panel_canvas.delete(border_id)
                 #self.current_highlight = self.current_page
-                self.side_panel_canvas.itemconfig(text_id, fill="black")
+                #current_font = self.side_panel_canvas.itemcget(text_id, "font")
+                self.side_panel_canvas.itemconfig(text_id, font=("TkDefaultFont",current_font.cget("size"),"normal"))
 
         #self.side_panel_canvas.delete(border_id)
         
