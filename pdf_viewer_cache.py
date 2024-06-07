@@ -73,7 +73,7 @@ class PDFViewerCache:
             self.slide_data = {
                 "photoimage": slide_image,
                 "page_width": self.page_width,
-                "page_height": self.page_height + self.frame_height,
+                "page_height": self.page_height ,
                 "current_page": self.current_page,
                 "total_pages": self.doc.page_count
             }

@@ -193,19 +193,21 @@ class PDFViewerSlides:
         
         #ready = sys.stdin in select.select([sys.stdin], [], [])[0]
         #print(self.ready)
-        
+        '''
         self.flag_thread = threading.Thread(target=self.flag_handler)
         self.flag_thread.daemon = True
         self.flag_thread.start()
         self.flag_thread.join()
+        '''
 
         #if self.slide_flag:
         
-        #self.flag_handler()    
+        self.flag_handler()    
 
 
 
     def flag_handler(self):
+
             
         self.flag = self.flag_queue.get()
         #print(self.flag)
