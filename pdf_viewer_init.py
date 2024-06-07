@@ -10,7 +10,7 @@ from multiprocessing import Process, Queue, Array
 import ctypes
 
 class PDFViewerInit:
-    def __init__(self, root, default_pdf_path=None, display = ':1.0'):
+    def __init__(self, root, display, default_pdf_path=None ):
         self.root = root
         self.root.title("PDF Viewer")
         

@@ -26,8 +26,8 @@ import argparse
 
 
 class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache,PDFViewerProcess):
-    def __init__(self, root, default_pdf_path=None, display = ':1.0'):
-        super().__init__(root, default_pdf_path, display)
+    def __init__(self, root, display , default_pdf_path=None):
+        super().__init__(root, display, default_pdf_path)
 
     def run(self):
         self.root.mainloop()
@@ -41,9 +41,9 @@ def upload_pdf_dialog():
         '''
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Description of your program.")
-    parser.add_argument("-l", "--local", help="Display number for local display", type=str, default=':1.0')
-    parser.add_argument("-r", "--remote", help="Display number for remote display", type=str, default=':1.0')
+    parser = argparse.ArgumentParser(description="Process for Displaying PDF")
+    parser.add_argument("-l", "--local", help="Display number for local display", type=str, default='localhost:10.0')
+    parser.add_argument("-r", "--remote", help="Display number for remote display", type=str, default=':0.0')
     parser.add_argument("-v", "--verbose", action='store_true', help='Enable verbose mode')
 
     args = parser.parse_args()
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     else:
         default_pdf_path = os.path.join(home_dir, "smart_projector/pdf_docs/fork-exec-notes.pdf")  # Set the default PDF path here
     print(default_pdf_path)
-    app = PDFViewer(root, default_pdf_path, args.remote)
+    app = PDFViewer(root, args.remote, default_pdf_path)
     app.run()
 '''
 import tkinter as tk
