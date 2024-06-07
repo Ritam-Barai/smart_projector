@@ -14,6 +14,7 @@ class PDFViewerSlides:
     def __init__(self, root, default_pdf_path=None):
         self.root = root
         self.root.title("Slideshow Viewer")
+        self.root.withdraw()
 
         # Create a new window
         self.slideshow_window = tk.Frame(root)
@@ -44,10 +45,13 @@ class PDFViewerSlides:
     
     def open_slideshow_window(self):
         
-
+        
         # Make the window full screen
-        #self.root.attributes('-fullscreen', True)
+        self.root.deiconify()
+        self.root.attributes('-fullscreen', True)
         #self.root.overrideredirect(True)
+
+        
 
 
         # Create a canvas in the new window

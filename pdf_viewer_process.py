@@ -346,6 +346,8 @@ class PDFViewerProcess:
             print(self.output_thread.getName())
             print("Done loading")
             self.root.after(0,self.load_output_process)
+
+        return
             
 
         

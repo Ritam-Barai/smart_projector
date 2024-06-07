@@ -104,6 +104,11 @@ class PDFViewerInit:
         self.canvas.bind("<Button-1>", self.canvas_click)
         self.canvas.bind("<B1-Motion>", self.canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.canvas_release)
+
+        # Bind keyboard events
+        self.main_frame.focus_set()
+        self.main_frame.bind("<Left>", lambda event: self.prev_page(event))
+        self.main_frame.bind("<Right>", lambda event: self.next_page(event))
         
         # Bind click events to each page number text item
         self.side_panel_canvas.bind("<Button-1>", self.side_panel_canvas_click)
