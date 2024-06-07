@@ -48,7 +48,7 @@ class PDFViewerSlides:
         
         # Make the window full screen
         self.root.deiconify()
-        self.root.attributes('-fullscreen', True)
+        #self.root.attributes('-fullscreen', True)
         #self.root.overrideredirect(True)
 
         
@@ -129,10 +129,10 @@ class PDFViewerSlides:
             
             self.slide_image = ImageTk.PhotoImage(resized_image)
             print(self.slide_image,(self.fullscreen_width - self.slide_image.width()) //2)
-            self.slideshow_canvas.create_image((self.fullscreen_width - self.slide_image.width()) //2, 0, anchor="nw", image=self.slide_image)
+            self.slideshow_canvas.create_image((self.fullscreen_width - self.slide_image.width()) //2, (self.fullscreen_height - self.slide_image.height()) //2, anchor="nw", image=self.slide_image)
             print(self.slide_image.width(),self.slide_image.height())
             self.page_number_text()
-            self.pointer = self.slideshow_canvas.create_oval(self.scaled_x + (self.fullscreen_width - self.slide_image.width()) //2 , self.scaled_y, self.scaled_x + 20 + (self.fullscreen_width - self.slide_image.width()) //2, self.scaled_y + 20, fill="red", outline="red")
+            self.pointer = self.slideshow_canvas.create_oval(self.scaled_x + (self.fullscreen_width - self.slide_image.width()) //2 , self.scaled_y + (self.fullscreen_height - self.slide_image.height()) //2, self.scaled_x + 20 + (self.fullscreen_width - self.slide_image.width()) //2, self.scaled_y + 20 + (self.fullscreen_height - self.slide_image.height()) //2, fill="red", outline="red")
             self.toggle_pointer()
             
 
@@ -279,7 +279,7 @@ class PDFViewerSlides:
 
     def update_pointer(self,x,y):
         self.scaled_x, self.scaled_y = self.map_coord(x,y)
-        self.slideshow_canvas.coords(self.pointer, self.scaled_x + (self.fullscreen_width - self.slide_image.width()) //2 , self.scaled_y, self.scaled_x + 20 + (self.fullscreen_width - self.slide_image.width()) //2, self.scaled_y + 20)
+        self.slideshow_canvas.coords(self.pointer, self.scaled_x + (self.fullscreen_width - self.slide_image.width()) //2 , self.scaled_y + (self.fullscreen_height - self.slide_image.height()) //2, self.scaled_x + 20 + (self.fullscreen_width - self.slide_image.width()) //2, self.scaled_y + 20 + (self.fullscreen_height - self.slide_image.height()) //2)
 
     def map_coord(self,x,y):
         x_scale = self.slide_image.width() / self.page_width

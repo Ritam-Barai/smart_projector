@@ -49,8 +49,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.verbose:
         print("Verbose mode enabled")
-        print(f'Local Display: {args.local}')
-        print(f'Remote Display: {args.remote}')    
+        print(f'Local Display {args.local}')
+        print(f'Remote Display {args.remote}')    
 
     os.environ['DISPLAY'] = args.local  # Replace ':0.0' with your desired display
     root = tk.Tk()
