@@ -5,6 +5,7 @@ import select
 import selectors
 import threading
 import os
+import argparse
 
 class PDFSlideShow(PDFViewerSlides):
     def __init__(self, root, default_pdf_path=None):
@@ -34,7 +35,17 @@ def read_stdin(viewer):
 
 if __name__ == '__main__':
 
-    os.environ['DISPLAY'] = ':1.0'  # Replace ':0.0' with your desired display
+    parser = argparse.ArgumentParser(description="Subprocess for PDF Slide Show.")
+    parser.add_argument("-d", "--display", help="Display number for display", type=str, default=':1.0')
+    parser.add_argument("-v", "--verbose", action='store_true', help='Enable verbose mode')
+
+    args = parser.parse_args()
+    if args.verbose:
+        print("Verbose mode enabled")
+        print(f'Display Number: {args.display}')
+    
+
+    os.environ['DISPLAY'] = args.display  # Replace ':0.0' with your desired display
     root = tk.Tk()
     viewer = PDFSlideShow(root)
 

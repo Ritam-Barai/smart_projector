@@ -21,12 +21,13 @@ from pdf_viewer_cache import PDFViewerCache
 from pdf_viewer_slides import PDFViewerSlides
 from pdf_viewer_process import PDFViewerProcess
 import os
+import argparse
 
 
 
 class PDFViewer(PDFViewerInit, PDFViewerLoad, PDFViewerAnnotate,PDFViewerCache,PDFViewerProcess):
-    def __init__(self, root, default_pdf_path=None):
-        super().__init__(root, default_pdf_path)
+    def __init__(self, root, default_pdf_path=None, display = ':1.0'):
+        super().__init__(root, default_pdf_path, display)
 
     def run(self):
         self.root.mainloop()
@@ -40,7 +41,18 @@ def upload_pdf_dialog():
         '''
 
 if __name__ == "__main__":
-    os.environ['DISPLAY'] = ':1.0'  # Replace ':0.0' with your desired display
+    parser = argparse.ArgumentParser(description="Description of your program.")
+    parser.add_argument("-l", "--local", help="Display number for local display", type=str, default=':1.0')
+    parser.add_argument("-r", "--remote", help="Display number for remote display", type=str, default=':1.0')
+    parser.add_argument("-v", "--verbose", action='store_true', help='Enable verbose mode')
+
+    args = parser.parse_args()
+    if args.verbose:
+        print("Verbose mode enabled")
+        print(f'Local Display: {args.local}')
+        print(f'Remote Display: {args.remote}')    
+
+    os.environ['DISPLAY'] = args.local  # Replace ':0.0' with your desired display
     root = tk.Tk()
     pdf_path = tk.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
     #root.withdraw()
@@ -52,7 +64,7 @@ if __name__ == "__main__":
     else:
         default_pdf_path = os.path.join(home_dir, "smart_projector/pdf_docs/fork-exec-notes.pdf")  # Set the default PDF path here
     print(default_pdf_path)
-    app = PDFViewer(root, default_pdf_path)
+    app = PDFViewer(root, default_pdf_path, args.remote)
     app.run()
 '''
 import tkinter as tk

@@ -10,7 +10,7 @@ from multiprocessing import Process, Queue, Array
 import ctypes
 
 class PDFViewerInit:
-    def __init__(self, root, default_pdf_path=None):
+    def __init__(self, root, default_pdf_path=None, display = ':1.0'):
         self.root = root
         self.root.title("PDF Viewer")
         
@@ -157,7 +157,8 @@ class PDFViewerInit:
         self.terminate_event = threading.Event()
         
         # Start slides.py as a subprocess
-        self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
+        self.args = [f'--display={display}']
+        self.proc = subprocess.Popen([sys.executable, 'slides.py'] + self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
         atexit.register(self.proc.terminate)
         
         self.flag_condition = threading.Condition()

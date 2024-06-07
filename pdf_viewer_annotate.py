@@ -64,7 +64,7 @@ class PDFViewerAnnotate:
             self.pointer_position[0] = event.x
             self.pointer_position[1] = event.y
             #print(list(self.pointer_position))
-            time.sleep(0.1)
+            time.sleep(0.01)
             if self.slideshow_active:
                 #print(list(self.pointer_position))
                 with self.coord_condition:

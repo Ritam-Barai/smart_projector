@@ -52,7 +52,7 @@ class PDFViewerLoad:
                 self.q.get_nowait()
             except queue.Empty:
                 break
-        self.proc = subprocess.Popen([sys.executable, 'slides.py'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
+        self.proc = subprocess.Popen([sys.executable, 'slides.py'] + self.args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,bufsize=1, universal_newlines=True)
         atexit.register(self.proc.terminate)
         self.slide_process()
         #self.handle_new_flag("INIT")
