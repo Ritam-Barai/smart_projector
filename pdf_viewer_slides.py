@@ -48,7 +48,7 @@ class PDFViewerSlides:
         
         # Make the window full screen
         self.root.deiconify()
-        #self.root.attributes('-fullscreen', True)
+        self.root.attributes('-fullscreen', True)
         #self.root.overrideredirect(True)
 
         
