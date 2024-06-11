@@ -99,9 +99,9 @@ class PDFViewerLoad:
 
         self.canvas.config(width=self.page_width, height=self.page_height  )
         print(self.page_width,self.page_height,self.button_frame.winfo_height())
-        self.main_frame.config(width=self.page_width , height= self.page_height  +  self.button_frame.winfo_height() )
+        self.main_frame.config(width=self.page_width , height= self.page_height  + 2 * self.button_frame.winfo_height() )
         self.main_frame.update_idletasks()
-        self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height +  self.button_frame.winfo_height()}")
+        self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2 * self.button_frame.winfo_height()}")
         self.frame_height = self.button_frame.winfo_height()
         self.root.resizable(False, False)
         #self.root.update()
@@ -160,13 +160,13 @@ class PDFViewerLoad:
             self.side_panel_frame.grid_remove()  # Hide the side panel
             self.toggle_button_text.set("Show Side Panel")
             self.side_panel_width = 0
-            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + self.button_frame.winfo_height()}")
+            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2* self.button_frame.winfo_height()}")
             self.root.resizable(False, False)
         else:
             self.side_panel_frame.grid()  # Show the side panel
             self.toggle_button_text.set("Hide Side Panel")
             self.side_panel_width = 200
-            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height +  self.button_frame.winfo_height()}")
+            self.root.geometry(f"{self.page_width+self.side_panel_width+10}x{self.page_height + 2* self.button_frame.winfo_height()}")
             self.root.resizable(False, False)
             self.show_side_panel()  # Display thumbnails in the side panel
         self.side_panel_visible = not self.side_panel_visible
