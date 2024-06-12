@@ -61,7 +61,7 @@ class PDFViewerSlides:
         # Get the fullscreen dimensions
         self.fullscreen_width = self.slideshow_window.winfo_screenwidth()
         self.fullscreen_height = self.slideshow_window.winfo_screenheight()
-        print(self.fullscreen_width,self.fullscreen_height)
+        #print(self.fullscreen_width,self.fullscreen_height)
 
         # Set the pointer status
         self.pointer_status = False
@@ -110,7 +110,7 @@ class PDFViewerSlides:
 
             # Calculate the scale factor
             self.scale_factor = min(self.fullscreen_width / self.page_width, self.fullscreen_height / self.page_height)
-            print(self.scale_factor,self.page_width ,self.page_height)
+            #print(self.scale_factor,self.page_width ,self.page_height)
 
             # Update the canvas size 
             self.slideshow_canvas.config(width=int(self.page_width * self.scale_factor), height=int(self.page_height * self.scale_factor))
@@ -128,9 +128,9 @@ class PDFViewerSlides:
 
             
             self.slide_image = ImageTk.PhotoImage(resized_image)
-            print(self.slide_image,(self.fullscreen_width - self.slide_image.width()) //2)
+            #print(self.slide_image,(self.fullscreen_width - self.slide_image.width()) //2)
             self.slideshow_canvas.create_image((self.fullscreen_width - self.slide_image.width()) //2, (self.fullscreen_height - self.slide_image.height()) //2, anchor="nw", image=self.slide_image)
-            print(self.slide_image.width(),self.slide_image.height())
+            #print(self.slide_image.width(),self.slide_image.height())
             self.page_number_text()
             self.pointer = self.slideshow_canvas.create_oval(self.scaled_x + (self.fullscreen_width - self.slide_image.width()) //2 , self.scaled_y + (self.fullscreen_height - self.slide_image.height()) //2, self.scaled_x + 20 + (self.fullscreen_width - self.slide_image.width()) //2, self.scaled_y + 20 + (self.fullscreen_height - self.slide_image.height()) //2, fill="red", outline="red")
             self.toggle_pointer()
@@ -324,7 +324,7 @@ class PDFViewerSlides:
             return
         if self.pause_event.is_set():
         # Print the current slide flag
-            print(threading.current_thread().getName(),self.slide_flag)
+            #print(threading.current_thread().getName(),self.slide_flag)
 
             if self.slide_flag:
                 if self.flag == 'START':
