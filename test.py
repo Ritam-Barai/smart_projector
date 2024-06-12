@@ -2,6 +2,7 @@ import os
 import paramiko
 import tkinter as tk
 from tkinterdnd2 import TkinterDnD, DND_FILES
+import argparse
 
 class SSHFileUploader:
     def __init__(self, root, ssh_host, ssh_port, ssh_username, ssh_password, remote_path):
@@ -41,12 +42,24 @@ class SSHFileUploader:
             print(f"Failed to upload {file_path}: {e}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process for Displaying PDF")
+
+    parser.add_argument("-f", "--filepath", help="File path to directory for storing pdf", type=str, default='TEMP_DIR')
+    parser.add_argument("-i", "--ipaddress", help="IP Address for remote display", type=str, default='192.168.0.103')
+    parser.add_argument("-v", "--verbose", action='store_true', help='Enable verbose mode')
+
+    args = parser.parse_args()
+    if args.verbose:
+        print("Verbose mode enabled")
+        print(f'Local Display {args.local}')
+        print(f'Temp Directory: {args.filepath}')
+        print(f'IP Address: {args.ipaddress}')    
     # SSH server details
     SSH_HOST = '192.168.0.103'
     SSH_PORT = 22
     SSH_USERNAME = 'proj'
     SSH_PASSWORD = '1123'
-    REMOTE_PATH = '/home/proj/smart_projector/pdf_docs'
+    REMOTE_PATH = '/home/proj/smart_projector/f{args.filepath}'
 
     root = TkinterDnD.Tk()
     app = SSHFileUploader(root, SSH_HOST, SSH_PORT, SSH_USERNAME, SSH_PASSWORD, REMOTE_PATH)

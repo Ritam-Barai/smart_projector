@@ -20,8 +20,11 @@ from pdf_viewer_annotate import PDFViewerAnnotate
 from pdf_viewer_cache import PDFViewerCache
 from pdf_viewer_slides import PDFViewerSlides
 from pdf_viewer_process import PDFViewerProcess
+from pdf_viewer_fileupload import SSHFileUploader
 import os
 import argparse
+import paramiko
+from tkinterdnd2 import TkinterDnD, DND_FILES
 
 
 
@@ -44,26 +47,48 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process for Displaying PDF")
     parser.add_argument("-l", "--local", help="Display number for local display", type=str, default='localhost:10.0')
     parser.add_argument("-r", "--remote", help="Display number for remote display", type=str, default=':0.0')
+    parser.add_argument("-i", "--ipaddress", help="IP Address for remote display", type=str, default='192.168.0.103')
     parser.add_argument("-v", "--verbose", action='store_true', help='Enable verbose mode')
 
     args = parser.parse_args()
     if args.verbose:
         print("Verbose mode enabled")
         print(f'Local Display {args.local}')
-        print(f'Remote Display {args.remote}')    
+        print(f'Remote Display {args.remote}')
+        print(f'IP Address: {args.ipaddress}')    
+
+    #SSH_HOST = '192.168.0.103'
+    SSH_PORT = 22
+    SSH_USERNAME = 'proj'
+    SSH_PASSWORD = '1123'
+    REMOTE_PATH = '/home/proj/smart_projector/pdf_docs'
+    default_pdf_path = None
 
     os.environ['DISPLAY'] = args.local  # Replace ':0.0' with your desired display
+    
     root = tk.Tk()
+
+    # After the window closes, check for the dropped PDF file or open file dialog
+    #if default_pdf_path is None:
+    #pdf_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+    
+    
+    
+    #app = SSHFileUploader(root, args.ipaddress, SSH_PORT, SSH_USERNAME, SSH_PASSWORD, REMOTE_PATH)
     pdf_path = tk.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
     #root.withdraw()
     # Get the path to the home directory
-    home_dir = os.path.expanduser("~")
-
     if pdf_path:
         default_pdf_path = pdf_path
     else:
+        # Get the path to the home directory
+        home_dir = os.path.expanduser("~")
         default_pdf_path = os.path.join(home_dir, "smart_projector/pdf_docs/fork-exec-notes.pdf")  # Set the default PDF path here
+
     print(default_pdf_path)
+        
+    
+    
     app = PDFViewer(root, args.remote, default_pdf_path)
     app.run()
 '''
