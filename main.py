@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
 '''
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from pdf_viewer_init import PDFViewerInit
 from pdf_viewer_load import PDFViewerLoad
 from pdf_viewer_annotate import PDFViewerAnnotate
@@ -43,6 +43,37 @@ def upload_pdf_dialog():
         app.run()
         '''
 
+home_dir = os.path.expanduser("~")
+def file_upload():
+    # Specify the locked directory
+    locked_directory = f"{home_dir}/smart_projector/server_proj/projview/media/pdfs"  # Change this to your target directory
+    print(f"Locked directory: {locked_directory}")
+    if not os.path.exists(locked_directory):
+        print('No Files uploaded this session')
+        exit(f"Directory does not exist: {locked_directory}")
+    else:
+        print(f"Locked directory: {locked_directory}")
+        # Open the file dialog in the specified directory
+        filename = filedialog.askopenfilename(
+            initialdir=locked_directory,
+            title="Select a PDF file",
+            filetypes=[("PDF files", "*.pdf")]
+        )
+
+    # Ensure the selected file is within the locked directory
+    if filename:
+        # Get the absolute path of the locked directory and the selected file
+        locked_directory_abs = os.path.abspath(locked_directory)
+        selected_file_abs = os.path.abspath(filename)
+
+        # Check if the selected file starts with the locked directory path
+        if os.path.commonpath([locked_directory_abs]) == os.path.commonpath([locked_directory_abs, selected_file_abs]):
+            messagebox.showinfo("Selected File", f"File selected: {filename}")
+            return selected_file_abs
+        else:
+            messagebox.showerror("Invalid Selection", "You can only select files within the specified directory.")
+            return None
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process for Displaying PDF")
     parser.add_argument("-l", "--local", help="Display number for local display", type=str, default='localhost:10.0')
@@ -67,13 +98,14 @@ if __name__ == "__main__":
     os.environ['DISPLAY'] = args.local  # Replace ':0.0' with your desired display
     
     root = tk.Tk()
+    #root.withdraw()
 
     # After the window closes, check for the dropped PDF file or open file dialog
     #if default_pdf_path is None:
     #pdf_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
     
     
-    
+    '''
     #app = SSHFileUploader(root, args.ipaddress, SSH_PORT, SSH_USERNAME, SSH_PASSWORD, REMOTE_PATH)
     pdf_path = tk.filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
     #root.withdraw()
@@ -86,7 +118,10 @@ if __name__ == "__main__":
         default_pdf_path = os.path.join(home_dir, "smart_projector/pdf_docs/fork-exec-notes.pdf")  # Set the default PDF path here
 
     print(default_pdf_path)
-        
+    '''
+    default_pdf_path = file_upload()
+    if default_pdf_path is None:
+         exit("Wrong file uploaded")
     
     
     app = PDFViewer(root, args.remote, default_pdf_path)

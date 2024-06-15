@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog,font
+from tkinter import filedialog,font, messagebox
 import fitz  # PyMuPDF
 import os
 import tempfile
@@ -10,16 +10,54 @@ import subprocess
 import sys
 from PIL import Image, ImageTk,ImageEnhance
 import io
+import os
+
 
 class PDFViewerLoad:
 
+    
+    def file_upload(self):
+        # Specify the locked directory
+        self.home_dir = os.path.expanduser("~")
+        locked_directory = f"{self.home_dir}/smart_projector/server_proj/projview/media/pdfs"  # Change this to your target directory
+        #print(f"Locked directory: {locked_directory}")
+        if not os.path.exists(locked_directory):
+            print('No Files uploaded this session')
+            exit(f"Directory does not exist: {locked_directory}")
+        else:
+            print(f"Locked directory: {locked_directory}")
+            # Open the file dialog in the specified directory
+            filename = filedialog.askopenfilename(
+                initialdir=locked_directory,
+                title="Select a PDF file",
+                filetypes=[("PDF files", "*.pdf")]
+            )
+
+        # Ensure the selected file is within the locked directory
+        if filename:
+            # Get the absolute path of the locked directory and the selected file
+            locked_directory_abs = os.path.abspath(locked_directory)
+            selected_file_abs = os.path.abspath(filename)
+
+            # Check if the selected file starts with the locked directory path
+            if os.path.commonpath([locked_directory_abs]) == os.path.commonpath([locked_directory_abs, selected_file_abs]):
+                messagebox.showinfo("Selected File", f"File selected: {filename}")
+                return selected_file_abs
+            else:
+                messagebox.showerror("Invalid Selection", "You can only select files within the specified directory.")
+                return None       
+    
     def load_pdf(self, path=None):
         
         if path:
             self.pdf_path = path
         else:
             # Open file dialog to select PDF file
-            self.pdf_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+            #self.pdf_path = filedialog.askopenfilename(filetypes=[("PDF Files", "*.pdf")])
+            while True:
+                self.pdf_path = self.file_upload() 
+                if self.pdf_path or self.old_path:
+                    break  
             self.clear_cache_file()
             print(self.thumbnail_cache)
             print(self.pdf_path)
@@ -32,6 +70,7 @@ class PDFViewerLoad:
             self.clear_temp_directory()
             print(os.listdir(self.temp_dir))
             self.current_page = 0
+            self.old_path = self.pdf_path
             
             self.show_side_panel()  # Display thumbnails in the side panel
             self.show_page()

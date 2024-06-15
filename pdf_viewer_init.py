@@ -174,7 +174,7 @@ class PDFViewerInit:
         
 
 
-        
+        self.old_path = None   
         # Load the default PDF if provided
         if self.pdf_path:
             self.load_pdf(self.pdf_path)
