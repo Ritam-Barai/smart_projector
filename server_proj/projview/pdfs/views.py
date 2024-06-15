@@ -85,7 +85,7 @@ def delete_media_files(request):
             #deleted_count, _ = PDF.objects.all.delete
             '''
             with transaction.atomic():
-            #call(['python', 'manage.py', 'cleanup_pdfs'])
+            #call(['python3', 'manage.py', 'cleanup_pdfs'])
                 call(['python', 'manage.py', 'flush', '--noinput'])
                 deleted_count, _ = PDF.objects.all().delete()
                 self.stdout.write(self.style.SUCCESS(f'Successfully deleted {deleted_count} records from MyModel'))

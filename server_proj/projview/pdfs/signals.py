@@ -29,7 +29,7 @@ def cleanup_cache(sender, **kwargs):
 def cleanup_pyc(sender, **kwargs):
     def delete_pyc_files():
         try:
-            call(['python', 'manage.py', 'cleanup_pyc'])
+            call(['python3', 'manage.py', 'cleanup_pyc'])
         except Exception as e:
             print(f"Error deleting .pyc files: {e}")
 
@@ -43,7 +43,7 @@ def cleanup_pyc(sender, **kwargs):
 def cleanup_pdfs(sender, **kwargs):
     def delete_pdfs():
         try:
-            call(['python', 'manage.py', 'cleanup_pdfs'])
+            call(['python3', 'manage.py', 'cleanup_pdfs'])
         except Exception as e:
             print(f"Error deleting pdf files: {e}")
 
@@ -61,7 +61,7 @@ def cleanup_media(sender, **kwargs):
         media_root = settings.MEDIA_ROOT
         pdf_directory = os.path.join(media_root)
         try:
-            call(['python', 'manage.py', 'clean_media'])
+            call(['python3', 'manage.py', 'clean_media'])
             shutil.rmtree(media_root)
             os.makedirs(media_root)  
             
