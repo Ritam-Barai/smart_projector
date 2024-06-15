@@ -13,11 +13,11 @@
         .title-bar {
             background-color: #333;
             color: white;
-            padding: 10px;
+            padding: 20px;
             text-align: center;
         }
         .container {
-            margin: 20px;
+            margin: 50px;
         }
         #uploadDialog {
             display: none;
@@ -29,6 +29,9 @@
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
+        }
+        #stopButton {
+        float: right;
         }
         #overlay {
             display: none;
@@ -68,10 +71,11 @@
 </head>
 <body>
     <div class="title-bar">
-        <button id="uploadButton">Upload PDF</button>
+        <button id="uploadButton" class="left">Upload PDF</button>
+        <button id="stopButton" class="right">Stop Server</button>
     </div>
     <div class="container">
-        <h1>Uploaded PDFs</h1>
+        <h1>Uploaded PDFs @ {{host_ip}}</h1>
         <div id="pdfList"></div>
     </div>
     <div id="overlay"></div>
@@ -111,6 +115,10 @@
             const files = event.dataTransfer.files;
             handleFiles(files);
         });
+        
+
+
+        const HOST_IP = "{{ host_ip }}";
 
         // Function to handle file upload
         function handleFiles(files) {
@@ -147,6 +155,24 @@
                 .then(response => response.json())
                 .then(data => displayPDFs(data.pdfs))
                 .catch(error => console.error('Error:', error));
+        });
+        document.getElementById('stopButton').addEventListener('click', function() {
+            fetch('/stop_server/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Server stopping...');
+                    alert('Server is stopping...');
+                } else {
+                    console.error('Failed to stop the server');
+                }
+            }).catch(error => {
+                console.error('Error stopping server:', error);
+            });
         });
 
 

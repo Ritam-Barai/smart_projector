@@ -25,6 +25,7 @@ urlpatterns = [
     #path('', include('pdf_view.urls')),
     path('pdfs/', include('pdfs.urls')),
     path('', pdf_views.index, name='index'),
+    path('stop_server/', pdf_views.stop_server, name='stop_server'),
     path('delete_media_files/', pdf_views.delete_media_files, name='delete_media_files'),
 ]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

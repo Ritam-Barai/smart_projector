@@ -21,5 +21,9 @@ class Command(BaseCommand):
             except FileNotFoundError:
                 self.stdout.write(self.style.WARNING(f"File {pdf.file.name} not found. Skipped deletion."))
 
+        PDF.objects.all().delete()
+        self.stdout.write(self.style.SUCCESS('Successfully deleted all PDF files'))
+        return
+
         # Optionally, delete all PDF objects from the database
         # PDF.objects.all().delete()

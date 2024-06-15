@@ -10,8 +10,10 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 from django.db import transaction
 from django.contrib.sessions.models import Session
+from django.views.decorators.csrf import csrf_exempt
 import shutil
 import os
+import signal 
 
 def index(request):
     return render(request, 'pdfs/index.html')
@@ -70,6 +72,18 @@ def list_pdfs(request):
     pdfs = PDF.objects.all()
     pdfs_list = [{'name': pdf.file.name, 'url': pdf.file.url} for pdf in pdfs]
     return JsonResponse({'pdfs': pdfs_list})
+
+def proj_IP(request):
+    
+    return render(request, 'index.html')
+
+@csrf_exempt
+def stop_server(request):
+    if request.method == 'POST':
+        os.kill(os.getpid(), signal.SIGINT)
+        return JsonResponse({'status': 'Server stopping...'})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 
 @require_POST
 def delete_media_files(request):

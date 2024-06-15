@@ -64,11 +64,13 @@ def cleanup_media(sender, **kwargs):
             call(['python3', 'manage.py', 'clean_media'])
             shutil.rmtree(media_root)
             os.makedirs(media_root)  
-            
+            call(['python3', 'manage.py', 'cleanup_pdfs'])
+            #PDF.objects.all().delete()
             #media_pdfs_dir = os.path.join(settings.MEDIA_ROOT)
             #media_pdfs_dir = settings.MEDIA_ROOT
             #shutil.rmtree(media_pdfs_dir)
             print(f"Deleted {media_root}: Clearing out files")
+
         except FileNotFoundError:
             pass
 

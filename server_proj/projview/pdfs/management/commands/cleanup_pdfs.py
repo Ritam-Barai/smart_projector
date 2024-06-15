@@ -9,4 +9,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         PDF.objects.all().delete()
         self.stdout.write(self.style.SUCCESS('Successfully deleted all pdfs'))
+
+        return
 #print(f"Deleted all files in {media_root} successfully.")

@@ -12,3 +12,5 @@ class Command(BaseCommand):
                 if file.endswith('.pyc'):
                     os.remove(os.path.join(root, file))
                     self.stdout.write(self.style.SUCCESS(f'Deleted: {os.path.join(root, file)}'))
+
+        return
