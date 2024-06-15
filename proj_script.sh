@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-export PATH=$PATH:$HOME/server_proj/projview
-FILE_PATH=$HOME/server_proj/projview
+export PATH=$PATH:$HOME/smart_projector/server_proj/projview
+FILE_PATH=$HOME/smart_projector/server_proj/projview
 #echo "$PATH"
 
 # Function to get IP address using ip command

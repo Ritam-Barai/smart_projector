@@ -121,7 +121,7 @@ if __name__ == "__main__":
     '''
     default_pdf_path = file_upload()
     if default_pdf_path is None:
-         exit("Wrong file uploaded")
+         exit("Wrong or no file uploaded")
     
     
     app = PDFViewer(root, args.remote, default_pdf_path)
