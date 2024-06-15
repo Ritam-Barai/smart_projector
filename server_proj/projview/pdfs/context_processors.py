@@ -4,5 +4,5 @@ import os
 
 def host_ip(request):
     return {
-        'host_ip': os.getenv('HOST_IP', '127.0.0.1')
+        'host_ip': os.getenv('HOST_IP', settings.HOST_IP)
     }

@@ -24,7 +24,7 @@ def cleanup_cache(sender, **kwargs):
 
     atexit.register(delete_cache_files)
 
-
+'''
 @receiver(request_finished)
 def cleanup_pyc(sender, **kwargs):
     def delete_pyc_files():
@@ -37,7 +37,7 @@ def cleanup_pyc(sender, **kwargs):
     
     
     atexit.register(delete_pyc_files)
-
+'''
 
 @receiver(request_finished)
 def cleanup_pdfs(sender, **kwargs):
