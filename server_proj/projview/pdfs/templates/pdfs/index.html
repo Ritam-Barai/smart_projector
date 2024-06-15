@@ -1,0 +1,210 @@
+<!-- pdfs/templates/pdfs/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .title-bar {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+        }
+        #uploadDialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        #fileDropArea {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+    </style>
+    <!-- Include CSRF token here -->
+    <script>
+        // Function to get CSRF cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</head>
+<body>
+    <div class="title-bar">
+        <button id="uploadButton">Upload PDF</button>
+    </div>
+    <div class="container">
+        <h1>Uploaded PDFs</h1>
+        <div id="pdfList"></div>
+    </div>
+    <div id="overlay"></div>
+    <div id="uploadDialog">
+        <h2>Drag and Drop PDF Files Here</h2>
+        <div id="fileDropArea">Drop files here...</div>
+    </div>
+    
+
+    {% csrf_token %}  <!-- Include CSRF token here -->
+
+    <script>
+        // JavaScript code for handling events and making AJAX requests
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('uploadDialog').style.display = 'block';
+        });
+
+        document.getElementById('overlay').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('uploadDialog').style.display = 'none';
+        });
+
+        const fileDropArea = document.getElementById('fileDropArea');
+        fileDropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            fileDropArea.style.backgroundColor = '#f0f0f0';
+        });
+
+        fileDropArea.addEventListener('dragleave', () => {
+            fileDropArea.style.backgroundColor = 'white';
+        });
+
+        fileDropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileDropArea.style.backgroundColor = 'white';
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // Function to handle file upload
+        function handleFiles(files) {
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('file', file);  // Use 'file' as the key
+            }
+
+            fetch('/pdfs/upload/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')  // Include CSRF token
+                }
+            }).then(response => response.json())
+            .then(data => {
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('uploadDialog').style.display = 'none';
+                fetchAndDisplayPDFs(); // Reload PDF list after upload
+            }).catch(error => console.error('Error:', error));
+        }
+
+        // Function to fetch and display PDFs after upload
+        function fetchAndDisplayPDFs() {
+            fetch('/pdfs/')
+                .then(response => response.json())
+                .then(data => displayPDFs(data.pdfs))
+                .catch(error => console.error('Error:', error));
+        }
+        // Fetch and display existing PDFs on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/pdfs/')
+                .then(response => response.json())
+                .then(data => displayPDFs(data.pdfs))
+                .catch(error => console.error('Error:', error));
+        });
+
+
+        function displayPDFs(pdfs) {
+            const pdfList = document.getElementById('pdfList');
+            pdfList.innerHTML = '';
+            pdfs.forEach(pdf => {
+                const link = document.createElement('a');
+                link.href = pdf.url;
+                link.textContent = pdf.name;
+                link.target = '_blank';
+                pdfList.appendChild(link);
+                pdfList.appendChild(document.createElement('br'));
+            });
+        }
+
+        // JavaScript function to delete files on server when leaving the page
+        window.addEventListener('beforeunload', function(event) {
+            // Send a POST request to your Django view to delete files
+            fetch('/delete_media_files/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Include CSRF token if your server requires it
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ deleteAll: true }) // Example payload
+            }).then(response => {
+                // Handle response as needed
+                console.log('Files deleted successfully');
+                //fetchAndDisplayPDFs(); // Reload PDF list after deletion
+            }).catch(error => {
+                console.error('Error deleting files:', error);
+            });
+        });
+
+        // Function to get CSRF token from cookies (example implementation)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+
+        // Fetch and display existing PDFs on page load
+        fetch('/pdfs/')
+            .then(response => response.json())
+            .then(data => displayPDFs(data.pdfs))
+            .catch(error => console.error('Error:', error));
+    </script>
+</body>
+</html>

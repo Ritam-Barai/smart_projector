@@ -16,8 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from pdfs import views as pdf_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('pdf_view.urls')),
-]
+    #path('', include('pdf_view.urls')),
+    path('pdfs/', include('pdfs.urls')),
+    path('', pdf_views.index, name='index'),
+    path('delete_media_files/', pdf_views.delete_media_files, name='delete_media_files'),
+]  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
