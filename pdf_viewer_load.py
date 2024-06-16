@@ -20,9 +20,12 @@ class PDFViewerLoad:
         # Specify the locked directory
         self.home_dir = os.path.expanduser("~")
         locked_directory = f"{self.home_dir}/smart_projector/server_proj/projview/media/pdfs"  # Change this to your target directory
+        script_path =f"{self.home_dir}/smart_projector/server_proj/projview/kill_server.sh"
         #print(f"Locked directory: {locked_directory}")
         if not os.path.exists(locked_directory):
             print('No Files uploaded this session')
+            #subprocess.Popen(['bash', script_path], preexec_fn=os.setsid)
+            messagebox.showerror("Directory does not exist:", "No Files uploaded this session. Please upload a file")
             exit(f"Directory does not exist: {locked_directory}")
         else:
             print(f"Locked directory: {locked_directory}")

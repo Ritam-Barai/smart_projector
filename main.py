@@ -24,6 +24,7 @@ from pdf_viewer_fileupload import SSHFileUploader
 import os
 import argparse
 import paramiko
+import subprocess
 from tkinterdnd2 import TkinterDnD, DND_FILES
 
 
@@ -44,12 +45,15 @@ def upload_pdf_dialog():
         '''
 
 home_dir = os.path.expanduser("~")
+script_path =f"{home_dir}/smart_projector/server_proj/projview/kill_server.sh" 
 def file_upload():
     # Specify the locked directory
     locked_directory = f"{home_dir}/smart_projector/server_proj/projview/media/pdfs"  # Change this to your target directory
-    print(f"Locked directory: {locked_directory}")
+    #print(f"Locked directory: {locked_directory}")
     if not os.path.exists(locked_directory):
         print('No Files uploaded this session')
+        #subprocess.Popen(['bash', script_path], preexec_fn=os.setsid)
+        messagebox.showerror("Directory does not exist:", "No Files uploaded this session. Please upload a file")
         exit(f"Directory does not exist: {locked_directory}")
     else:
         print(f"Locked directory: {locked_directory}")
@@ -92,7 +96,7 @@ if __name__ == "__main__":
     SSH_PORT = 22
     SSH_USERNAME = 'proj'
     SSH_PASSWORD = '1123'
-    REMOTE_PATH = '/home/proj/smart_projector/pdf_docs'
+    #REMOTE_PATH = '/home/proj/smart_projector/pdf_docs'
     default_pdf_path = None
 
     os.environ['DISPLAY'] = args.local  # Replace ':0.0' with your desired display
@@ -121,11 +125,15 @@ if __name__ == "__main__":
     '''
     default_pdf_path = file_upload()
     if default_pdf_path is None:
-         exit("Wrong or no file uploaded")
+        #subprocess.Popen(['bash', script_path], preexec_fn=os.setsid)
+        #messagebox.showerror("Directory does not exist:", "No Files uploaded this session. Please upload a file")
+        exit("Wrong or no file uploaded")
     
     
     app = PDFViewer(root, args.remote, default_pdf_path)
     app.run()
+    subprocess.Popen(['bash', script_path], preexec_fn=os.setsid)
+    print('Exiting')
 '''
 import tkinter as tk
 from pdf_viewer_init import PDFViewerInit
