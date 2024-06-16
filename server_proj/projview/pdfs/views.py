@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 import shutil
 import os
 import signal 
+import subprocess
 
 def index(request):
     return render(request, 'pdfs/index.html')
@@ -80,10 +81,46 @@ def proj_IP(request):
 @csrf_exempt
 def stop_server(request):
     if request.method == 'POST':
-        os.kill(os.getpid(), signal.SIGINT)
-        return JsonResponse({'status': 'Server stopping...'})
+        '''
+        try:
+            # Replace 'path/to/stop_server.sh' with the actual path to your script
+            subprocess.run(['bash', f'{settings.BASE_DIR}/kill_server.sh'], check=True)
+            return JsonResponse({'status': 'Server stopping...'})
+        except subprocess.CalledProcessError as e:
+            return JsonResponse({'error': 'Failed to stop server'}, status=500)
+        '''
+        if cache.get('stop_server_subprocess_running'):
+            return JsonResponse({'error': 'Subprocess is already running.'}, status=400)
+
+        # Set the flag to indicate the subprocess is running
+        cache.set('stop_server_subprocess_running', True, timeout=60)  # Timeout in seconds
+
+        script_path = f'{settings.BASE_DIR}/kill_server.sh'
+        
+    try:
+        proc = subprocess.Popen(['bash', script_path], preexec_fn=os.setsid)
+        response = {'status': 'Server stopping...','code': 200}
+        return JsonResponse(response)
+    except subprocess.CalledProcessError:
+        logger.exception("Failed to stop server due to subprocess error.")
+        response = {'error': 'Failed to stop server due to subprocess error.', 'code': 500}
+    except FileNotFoundError:
+        logger.exception("Script file not found.")
+        response = {'error': 'Script file not found.', 'code': 500}
+    except subprocess.TimeoutExpired:
+        logger.exception("Stopping server subprocess timed out.")
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+        response = {'error': 'Stopping server subprocess timed out.', 'code': 500}
+    except Exception as e:
+        logger.exception(f"An unexpected error occurred: {str(e)}")
+        response = {'error': f'An unexpected error occurred: {str(e)}', 'code': 500}
+    finally:
+            # Clear the flag once the subprocess completes
+            cache.delete('stop_server_subprocess_running')
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+def health_check(request):
+    return JsonResponse({'status': 'ok'})
 
 @require_POST
 def delete_media_files(request):

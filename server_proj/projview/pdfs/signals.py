@@ -61,9 +61,9 @@ def cleanup_media(sender, **kwargs):
         media_root = settings.MEDIA_ROOT
         pdf_directory = os.path.join(media_root)
         try:
-            call(['python3', 'manage.py', 'clean_media'])
+            #call(['python3', 'manage.py', 'clean_media'])
             shutil.rmtree(media_root)
-            os.makedirs(media_root)  
+            #os.makedirs(media_root)  
             call(['python3', 'manage.py', 'cleanup_pdfs'])
             #PDF.objects.all().delete()
             #media_pdfs_dir = os.path.join(settings.MEDIA_ROOT)

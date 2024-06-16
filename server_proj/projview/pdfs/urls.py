@@ -9,4 +9,5 @@ urlpatterns = [
     path('proj_IP/', views.proj_IP, name='proj_ip'),
     path('stop_server/', views.stop_server, name='stop_server'),
     path('delete_media_files/', views.delete_media_files, name='delete_media_files'),
+    path('health_check/', views.health_check, name='health_check'),
 ]

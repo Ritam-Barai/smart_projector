@@ -13,8 +13,10 @@
         .title-bar {
             background-color: #333;
             color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between; 
         }
         .container {
             margin: 50px;
@@ -30,9 +32,8 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
         }
-        #stopButton {
-        float: right;
-        }
+        
+        
         #overlay {
             display: none;
             position: fixed;
@@ -74,8 +75,11 @@
         <button id="uploadButton" class="left">Upload PDF</button>
         <button id="stopButton" class="right">Stop Server</button>
     </div>
+    <div id="serverStatus">Checking server status...</div>
     <div class="container">
-        <h1>Uploaded PDFs @ {{host_ip}}</h1>
+        <h1>Uploaded PDFs:</h1>
+        <h3>Login cmd : ssh -X  pi@{{host_ip}}  (passwd : 1123)</h3>
+        
         <div id="pdfList"></div>
     </div>
     <div id="overlay"></div>
@@ -88,6 +92,8 @@
     {% csrf_token %}  <!-- Include CSRF token here -->
 
     <script>
+
+let statusCheckInterval = setInterval(checkServerStatus, 5000);
         // JavaScript code for handling events and making AJAX requests
         document.getElementById('uploadButton').addEventListener('click', function() {
             document.getElementById('overlay').style.display = 'block';
@@ -165,8 +171,9 @@
                 }
             }).then(response => {
                 if (response.ok) {
-                    console.log('Server stopping...');
-                    alert('Server is stopping...');
+                    console.log('Server has stopped');
+                    alert('Server has stopped');
+                    window.location.reload();
                 } else {
                     console.error('Failed to stop the server');
                 }
@@ -224,6 +231,29 @@
             }
             return cookieValue;
         }
+        
+        function checkServerStatus() {
+            fetch('/health_check/') // Assuming you have a simple endpoint to check server status
+                .then(response => {
+                    if (response.ok) {
+                        console.log("Server is running.");
+                        document.getElementById('serverStatus').innerText = 'Server is running';
+                    } else {
+                        // If the server responds, but not with a 200 OK
+                        console.error("Server might be having issues.");
+                        document.getElementById('serverStatus').innerText = 'Server might be having issues';
+                    }
+                })
+                .catch(error => {
+                    console.error("Server is down.", error);
+                    document.getElementById('serverStatus').innerText = 'Server is down';
+                    clearInterval(statusCheckInterval); // Stop further checks
+                    window.location.reload();
+                });
+        }
+
+        // Call checkServerStatus() every 5 seconds
+        setInterval(checkServerStatus, 3000);
 
 
         // Fetch and display existing PDFs on page load
