@@ -38,7 +38,7 @@ def cleanup_pyc(sender, **kwargs):
     
     atexit.register(delete_pyc_files)
 '''
-
+'''
 @receiver(request_finished)
 def cleanup_pdfs(sender, **kwargs):
     def delete_pdfs():
@@ -51,7 +51,7 @@ def cleanup_pdfs(sender, **kwargs):
     
     
     atexit.register(delete_pdfs)
-
+'''
 
 
 @receiver(request_finished)
