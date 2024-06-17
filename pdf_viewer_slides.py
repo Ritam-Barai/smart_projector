@@ -124,7 +124,7 @@ class PDFViewerSlides:
             # Resize the image
             resized_image = self.pil_image.resize((int(self.page_width * self.scale_factor),int(self.page_height * self.scale_factor)), Image.BICUBIC)
             enhancer = ImageEnhance.Sharpness(resized_image)
-            resized_image = enhancer.enhance(20.0)  # Increase sharpness by a factor of 2.0
+            resized_image = enhancer.enhance(5.0)  # Increase sharpness by a factor of 2.0
 
             
             self.slide_image = ImageTk.PhotoImage(resized_image)

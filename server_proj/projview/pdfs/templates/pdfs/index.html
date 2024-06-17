@@ -75,7 +75,7 @@
         <button id="uploadButton" class="left">Upload PDF</button>
         <button id="stopButton" class="right">Stop Server</button>
     </div>
-    <div id="serverStatus">Checking server status...</div>
+    <div id="serverStatus">Server is running</div>
     <div class="container">
         <h1>Uploaded PDFs:</h1>
         <h3>Login cmd : ssh -X  pi@{{host_ip}}  (passwd : 1123)</h3>
@@ -253,7 +253,7 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
         }
 
         // Call checkServerStatus() every 5 seconds
-        setInterval(checkServerStatus, 3000);
+        setInterval(checkServerStatus, 10000);
 
 
         // Fetch and display existing PDFs on page load
