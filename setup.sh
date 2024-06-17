@@ -30,6 +30,9 @@ COMMENT
 date
 
 
+sudo apt-get update
+sudo apt-get upgrade -y
+sudo apt-get install --upgrade python3-pip
 
 cd smart_projector || exit
 python3 -m venv env
