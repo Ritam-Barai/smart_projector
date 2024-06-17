@@ -12,6 +12,9 @@ nmcli dev wifi hotspot ifname $INTERFACE ssid $SSID
 nmcli connection modify $SSID ipv4.addresses $HOTSPOT_ADDRESS
 nmcli connection modify $SSID ipv4.method shared
 
+nmcli connection down $SSID
+
+
 sudo apt install dnsmasq
 sudo service dnsmasq stop
 
@@ -21,6 +24,8 @@ dhcp-range=$IP_ADDRESS,$IP_ADDRESS,255.255.255.0,24h
 EOF
 
 sudo service dnsmasq start
+nmcli connection up $SSID
+
 reboot
 
 <<COMMENT

@@ -13,17 +13,18 @@ Run the following command to update the system:
 then run this script:
 bash ~/smart_projector/setup.sh
 
-
+Recommended: sudo date MMDDhhmmYYYY to set the correct date and time
+Can cause SSL errors if not set correctly
 ######################################
 COMMENT
 
 
 
 # Enable NTP synchronization
-sudo timedatectl set-ntp true
+#sudo timedatectl set-ntp true
 
 # Restart systemd-timesyncd service to ensure it syncs immediately
-sudo systemctl restart systemd-timesyncd.service
+#sudo systemctl restart systemd-timesyncd.service
 
 # Check the updated time
 date
@@ -42,6 +43,4 @@ chmod +x . slideshow_script.sh
 chmod +x . setup.sh
 chmod +x . server_script.sh
 chmod +x . hotspot.sh
-
-. hotspot.sh
 
