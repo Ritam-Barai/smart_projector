@@ -40,7 +40,13 @@ sed -i "s/^HOST_IP = .*/HOST_IP = '$IP_ADDR'/" $SETTINGS_FILE
 
 echo "Updated HOST_IP to $IP_ADDR in $SETTINGS_FILE"
 
-source smart_projector/env/bin/activate
+VENV_PATH="$HOME/smart_projector/env/bin/activate"
+if [ -f "$VENV_PATH" ]; then
+    echo "Activating the virtual environment..."
+    source "$VENV_PATH"
+else
+    echo "Virtual environment not found. Skipping activation."
+fi
 cd "$FILE_PATH" || exit
 
 
