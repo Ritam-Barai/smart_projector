@@ -3,7 +3,7 @@
 # Variables
 INTERFACE="wlan0"
 SSID="PROjector"
-HOTSPOT_ADDRESS="10.11.0.11/24"
+HOTSPOT_ADDRESS="10.11.0.1/24"
 IP_ADDRESS="10.11.0.69"
 
 # Create hotspot without password
