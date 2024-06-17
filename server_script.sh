@@ -40,6 +40,7 @@ sed -i "s/^HOST_IP = .*/HOST_IP = '$IP_ADDR'/" $SETTINGS_FILE
 
 echo "Updated HOST_IP to $IP_ADDR in $SETTINGS_FILE"
 
+source smart_projector/env/bin/activate
 cd "$FILE_PATH" || exit
 
 

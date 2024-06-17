@@ -7,7 +7,7 @@ FILE_PATH=$HOME/smart_projector
 
 cd "$FILE_PATH" || exit
 
-VENV_PATH="venv/bin/activate"
+VENV_PATH="env/bin/activate"
 
 # Check if the virtual environment exists
 if [ -f "$VENV_PATH" ]; then
