@@ -21,11 +21,17 @@ sudo sysctl net.ipv4.ip_forward=1
 echo "Configuring NAT (Network Address Translation)..."
 sudo iptables -t nat -A POSTROUTING -o wlan0 -j MASQUERADE
 
+# Change the owner of the file to the current user
+sudo chown $(whoami):$(whoami) /etc/iptables/rules.v4
+
+# Allow the owner to read and write, and deny others (replace with appropriate permissions)
+sudo chmod 600 /etc/iptables/rules.v4
+
 echo "Saving iptables rules..."
 sudo iptables-save > /etc/iptables/rules.v4
 
 # Step 5: Test Connectivity
-echo "Testing connectivity from the connected device..."
+#echo "Testing connectivity from the connected device..."
 # Optionally, you can add a ping test or other connectivity tests here
 
-echo "Setup complete. The connected device should now have internet access through your Raspberry Pi."
+#echo "Setup complete. The connected device should now have internet access through your Raspberry Pi."

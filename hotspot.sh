@@ -12,6 +12,18 @@ nmcli dev wifi hotspot ifname $INTERFACE ssid $SSID
 nmcli connection modify $SSID ipv4.addresses $HOTSPOT_ADDRESS
 nmcli connection modify $SSID ipv4.method shared
 
+sudo apt install dnsmasq
+sudo service dnsmasq stop
+
+sudo cat <<EOF > /etc/dnsmasq.conf
+interface=$INTERFACE
+dhcp-range=$IP_ADDRESS,$IP_ADDRESS,255.255.255.0,24h
+EOF
+
+sudo service dnsmasq start
+reboot
+
+<<COMMENT
 # Create custom DNSMasq configuration
 sudo mkdir -p /etc/NetworkManager/dnsmasq-shared
 echo "dhcp-range=$IP_ADDRESS,$IP_ADDRESS,12h" | sudo tee /etc/NetworkManager/dnsmasq-shared/$SSID.conf

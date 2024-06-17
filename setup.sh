@@ -36,24 +36,12 @@ source env/bin/activate
 
 pip install -r requirements.txt
 
-# Variables
-INTERFACE="wlan0"
-SSID="PROjector"
-
-IP_ADDRESS="10.11.0.1/24"
-DHCP_START="10.11.0.69"
-DHCP_END="10.11.0.69"
-
-# Create hotspot
-nmcli dev wifi hotspot ifname $INTERFACE ssid $SSID password $PASSWORD
-
-# Configure DHCP range
-nmcli connection modify $SSID ipv4.addresses $IP_ADDRESS
-nmcli connection modify $SSID ipv4.method shared
-nmcli connection modify $SSID ipv4.dhcp-start $DHCP_START
-nmcli connection modify $SSID ipv4.dhcp-end $DHCP_END
 
 # Run the main script
 chmod +x . slideshow_script.sh
 chmod +x . setup.sh
+chmod +x . server_script.sh
+chmod +x . hotspot.sh
+
+. hotspot.sh
 
