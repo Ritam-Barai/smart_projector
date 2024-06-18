@@ -15,6 +15,10 @@ bash ~/smart_projector/setup.sh
 
 Recommended: sudo date MMDDhhmmYYYY to set the correct date and time
 Can cause SSL errors if not set correctly
+
+
+Note: After imaging, dtoverlap=,,, has some problem. Comment it before mounting it on RPi
+Run rpi-update then unmount and  uncomment dtoverlay=,,, and mount it back on RPi
 ######################################
 COMMENT
 
@@ -33,6 +37,8 @@ date
 sudo apt-get update
 sudo apt-get upgrade -y
 sudo apt-get install --upgrade python3-pip
+sudo apt install lsof xinit openbox python3-tk -y
+
 
 cd smart_projector || exit
 python3 -m venv env

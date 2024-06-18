@@ -6,9 +6,11 @@ SSID="PROjector"
 HOTSPOT_ADDRESS="10.11.0.1/24"
 IP_ADDRESS="10.11.0.69"
 
+sudo apt-get upgrade NetworkManager
+
 # Create hotspot without password
 nmcli dev wifi hotspot ifname $INTERFACE ssid $SSID
-
+nmcli connection modify Hotspot connection,id $SSID
 nmcli connection modify $SSID ipv4.addresses $HOTSPOT_ADDRESS
 nmcli connection modify $SSID ipv4.method shared
 
