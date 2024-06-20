@@ -52,7 +52,11 @@ cd "$FILE_PATH" || exit
 
 
 python3 manage.py runserver "$IP_ADDR:8000"
+sudo systemctl stop hostapd
+sudo truncate -s 0 /var/lib/misc/udhcpd.leases
 
 sleep 5
 
 openbox --exit
+sudo systemctl start hostapd
+sudo systemctl restart udhcpd

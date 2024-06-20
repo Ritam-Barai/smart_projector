@@ -1,66 +1,3 @@
-#!/bin/bash
-sudo apt install hostapd udhcpd -y
- 
-sudo cat << EOF >/etc/udhcpd.conf
-start 10.69.69.69 # This is the range of IPs that the hostspot will give to client devices.
-end 10.69.69.69
-interface wlan0 # The device uDHCP listens on.
-remaining yes
-opt dns 8.8.8.8 8.8.4.4 # The DNS servers client devices will use.
-opt subnet 255.255.255.0
-opt router 10.69.69.1 # The Pi's IP address on wlan0 which we will set up shortly.
-opt lease 864000 # 10 day DHCP lease time in seconds
-EOF
- 
-sudo echo 'DHCPD_OPTS="-S"' > /etc/default/udhcpd
- 
-ifconfig wlan0 10.69.69.1/24
- 
-sudo cat << EOF >/etc/hostapd/hostapd.conf
-interface=wlan0
-ssid=PRO_jector
-hw_mode=g
-channel=6
-auth_algs=1
-wmm_enabled=0
-EOF
- 
-sudo cat << EOF >/etc/network/interfaces
-auto lo
- 
-iface lo inet loopback
-#iface eth0 inet dhcp
- 
-#allow-hotplug wlan0
-#wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
-#iface default inet dhcp
- 
-iface wlan0 inet static
-  address 10.69.69.1
-  netmask 255.255.255.0
- 
-#up iptables-restore < /etc/iptables.ipv4.nat
-EOF
- 
-sudo echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' > /etc/default/hostapd
- 
-#sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
-#echo 'net.ipv4.ip_forward=1' > /etc/sysctl.conf
-#iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-#iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-#iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
- 
-#sh -c "iptables-save > /etc/iptables.ipv4.nat"
- 
-#service hostapd start
-#service udhcpd start
-#sudo systemctl start udhcpd
-#sudo systemctl enable hostapd
-#sudo systemctl enable udhcpd
- 
-#update-rc.d hostapd enable
-#update-rc.d udhcpd enable
-
 sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 10.69.69.69:8000
 sudo iptables -t nat -A POSTROUTING -j MASQUERADE
 sudo iptables -A FORWARD -i wlan0 -o wlan0 -j ACCEPT
@@ -134,14 +71,6 @@ WantedBy=multi-user.target
  
 EOF
 
-service hostapd start
-service udhcpd start
-sudo systemctl start udhcpd
-sudo systemctl enable hostapd
-sudo systemctl enable udhcpd
- 
-update-rc.d hostapd enable
-update-rc.d udhcpd enable
 sudo systemctl restart udhcpd
 
 sudo systemctl enable monitor_dhcp.service
