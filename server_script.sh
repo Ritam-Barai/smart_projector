@@ -52,3 +52,7 @@ cd "$FILE_PATH" || exit
 
 
 python3 manage.py runserver "$IP_ADDR:8000"
+
+sleep 5
+
+openbox --exit

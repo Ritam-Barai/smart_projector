@@ -1,48 +1,60 @@
 #!/bin/bash
-
-# Variables
-INTERFACE="wlan0"
-SSID="PROjector"
-HOTSPOT_ADDRESS="10.11.0.1/24"
-IP_ADDRESS="10.11.0.69"
-
-sudo apt-get upgrade NetworkManager
-
-# Create hotspot without password
-nmcli dev wifi hotspot ifname $INTERFACE ssid $SSID
-nmcli connection modify Hotspot connection,id $SSID
-nmcli connection modify $SSID ipv4.addresses $HOTSPOT_ADDRESS
-nmcli connection modify $SSID ipv4.method shared
-
-nmcli connection down $SSID
-
-
-sudo apt install dnsmasq
-sudo service dnsmasq stop
-
-sudo cat <<EOF > /etc/dnsmasq.conf
-interface=$INTERFACE
-dhcp-range=$IP_ADDRESS,$IP_ADDRESS,255.255.255.0,24h
+aptitude install hostapd udhcpd -y
+ 
+cat << EOF >/etc/udhcpd.conf
+start 10.69.69.9 # This is the range of IPs that the hostspot will give to client devices.
+end 10.69.69.9
+interface wlan0 # The device uDHCP listens on.
+remaining yes
+opt dns 8.8.8.8 8.8.4.4 # The DNS servers client devices will use.
+opt subnet 255.255.255.0
+opt router 10.69.69.1 # The Pi's IP address on wlan0 which we will set up shortly.
+opt lease 864000 # 10 day DHCP lease time in seconds
 EOF
-
-sudo service dnsmasq start
-nmcli connection up $SSID
-
-reboot
-
-<<COMMENT
-# Create custom DNSMasq configuration
-sudo mkdir -p /etc/NetworkManager/dnsmasq-shared
-echo "dhcp-range=$IP_ADDRESS,$IP_ADDRESS,12h" | sudo tee /etc/NetworkManager/dnsmasq-shared/$SSID.conf
-
-# Configure NetworkManager to use custom DNSMasq configuration
-echo -e "[connection]\nid=$SSID\n\n[ipv4]\nmethod=shared" | sudo tee /etc/NetworkManager/conf.d/$SSID.conf
-
-# Restart NetworkManager
-sudo systemctl restart NetworkManager
-
-# Restart the hotspot connection
-nmcli connection down $SSID
-nmcli connection up $SSID
-
-echo "Open hotspot configured with a single DHCP client limit"
+ 
+echo 'DHCPD_OPTS="-S"' > /etc/default/udhcpd
+ 
+ifconfig wlan0 10.69.69.1/24
+ 
+cat << EOF >/etc/hostapd/hostapd.conf
+interface=wlan0
+ssid=PRO_jector
+hw_mode=g
+channel=6
+auth_algs=1
+wmm_enabled=0
+ 
+EOF
+ 
+cat << EOF >/etc/network/interfaces
+auto lo
+ 
+iface lo inet loopback
+#iface eth0 inet dhcp
+ 
+#allow-hotplug wlan0
+#wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+#iface default inet dhcp
+ 
+iface wlan0 inet static
+  address 10.69.69.1
+  netmask 255.255.255.0
+ 
+#up iptables-restore < /etc/iptables.ipv4.nat
+EOF
+ 
+echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' > /etc/default/hostapd
+ 
+#sh -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+#echo 'net.ipv4.ip_forward=1' > /etc/sysctl.conf
+#iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+#iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+#iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+ 
+#sh -c "iptables-save > /etc/iptables.ipv4.nat"
+ 
+service hostapd start
+service udhcpd start
+ 
+update-rc.d hostapd enable
+update-rc.d udhcpd enable
