@@ -1,7 +1,9 @@
+#!/bin/bash
+
 sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 10.69.69.69:8000
 sudo iptables -t nat -A POSTROUTING -j MASQUERADE
 sudo iptables -A FORWARD -i wlan0 -o wlan0 -j ACCEPT
-sudo iptables-save > /etc/iptables/rules.v4
+sh -c "iptables-save > /etc/iptables/rules.v4"
 
 sudo cat << EOF >/etc/systemd/system/start_django_and_monitor.sh
 #!/bin/bash
@@ -35,8 +37,8 @@ launch_browser() {
 }
 
 # Start Django server
-cd $DJANGO_DIR
-python3 $DJANGO_MANAGE runserver 0.0.0.0:$DJANGO_PORT &
+#cd $DJANGO_DIR
+#python3 $DJANGO_MANAGE runserver 0.0.0.0:$DJANGO_PORT &
 
 while true; do
     inotifywait -e modify $LEASES_FILE
@@ -45,10 +47,9 @@ while true; do
         IP_ADDRESS=$(tail -n 1 $LEASES_FILE | awk '{print $3}')
         echo "Launching browser for IP: $IP_ADDRESS"
         #launch_browser $CAPTIVE_PORTAL_URL
+        startx -- -nocursor
     fi
 done
-
-
  
 EOF
 

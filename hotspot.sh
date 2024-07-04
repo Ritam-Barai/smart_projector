@@ -64,7 +64,7 @@ sudo echo 'DAEMON_CONF="/etc/hostapd/hostapd.conf"' > /etc/default/hostapd
 sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 10.69.69.69:8000
 sudo iptables -t nat -A POSTROUTING -j MASQUERADE
 sudo iptables -A FORWARD -i wlan0 -o wlan0 -j ACCEPT
-sudo iptables-save > /etc/iptables/rules.v4
+sudo iptables-save > /etc/iptables.rules.v4
 
 sudo cat << EOF >/etc/systemd/system/start_django_and_monitor.sh
 #!/bin/bash
