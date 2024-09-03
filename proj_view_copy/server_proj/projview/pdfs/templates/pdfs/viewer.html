@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            padding-top: 50px; /* Ensure space for the title bar */
+            background-color: #f0f0f0;
+        }
+        .title-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box; /* Include padding in width calculation */
+            z-index: 1000; /* Ensure title bar is on top */
+        }
+        .title-bar h1 {
+            font-size: 18px; /* Reduced font size */
+            margin: 0 auto;
+            /*position: absolute;*/
+            left: 50%;
+            transform: translateX(-10%);
+            flex-grow: 1;
+            text-align: center; /* Center the title */
+        }
+        .title-bar button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .title-bar button:hover {
+            background-color: #777;
+        }
+        #pdf-container {
+            position: relative;
+            background-color: #f0f0f0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 100%;
+            max-height: calc(100vh - 80px  - 60px); /* Adjust for title bar and space */
+            margin-top: 20px; /* Add margin to prevent overlap with title bar */
+            /*padding-top: 20px;*/
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            z-index: 1000; /* Ensure PDF container is on top */
+        }
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            -webkit-user-drag: none; /* For WebKit browsers */
+            /*user-drag: none; /* For other browsers */
+            /*z-index: 1000; /* Ensure image is on top */
+        }
+        #page-controls {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            z-index: 1000; /* Ensure page controls are on top */
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.5s; /* Smooth transition for showing/hiding */
+            pointer-events: auto;
+        }
+        #page-controls.visible {
+            opacity: 1; /* Show when mouse is moving */
+        }
+        #page-controls button {
+            margin: 0 5px;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            z-index: 999;
+        }
+        #toggleTrackingButton {
+            position: relative;
+            z-index: 1000; /* Ensure this is higher than the overlay */
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #infoButton {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 16px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .popup {
+            display: none; /* Hidden by default */
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%; 
+            background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+        }
+
+        .popup-content {
+            background-color: white;
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 500px; 
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .popup-content li {
+            margin-bottom: 10px; /* Adjust this value to set the vertical spacing */
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        kbd {
+            background-color: #eee;
+            border-radius: 3px;
+            border: 1px solid #ccc;
+            padding: 2px 4px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+    </style>
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function checkViewerStatusPeriodically() {
+            const interval = 10000; // Check every 10 seconds
+
+            // Periodic status check
+            setInterval(() => {
+                checkViewerStatus();
+            }, interval);
+
+            // Check status when the tab visibility changes
+            document.addEventListener('visibilitychange', () => {
+                checkViewerStatus(); // Always check status regardless of visibility
+            });
+        }
+
+        function checkViewerStatus() {
+            fetch('/health_check/')
+                .then(response => {
+                    if (response.ok) {
+                        sendLogToServer('PDF viewer is active');
+                    } else {
+                        sendLogToServer('PDF viewer is inactive');
+                    }
+                })
+                .catch(error => {
+                    clearInterval(statusCheckInterval);
+                    sendLogToServer('PDF viewer is inactive');
+                });
+        }
+
+        function sendLogToServer(message) {
+            const url = '/log_tab_event/';
+            const data = new URLSearchParams({ 'event': message });
+
+            // Try using fetch first
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken') // Ensure this function returns the correct CSRF token
+                },
+                body: data
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => console.log('Log event sent:', data))
+            .catch(error => {
+                //console.error('Error sending log event via fetch:', error);
+                // Fallback to sendBeacon if fetch fails
+                if (navigator.sendBeacon) {
+                    const success = navigator.sendBeacon(url, data);
+                    if (success) {
+                        console.log('Log event failed via fetch; sent via sendBeacon');
+                    } else {
+                        console.error('Error sending log event via sendBeacon or fetch:', error);
+                    }
+                }
+            });
+        }
+
+
+        /*
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                console.log('PDF viewer is active');
+                sendLogToServer('PDF viewer is active');
+            } else {
+                console.log('PDF viewer is inactive');
+                sendLogToServer('PDF viewer is inactive');
+            }
+        });
+        */
+
+        // Optionally, you might want to send an initial log when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            //console.log('PDF viewer loaded');
+            checkViewerStatusPeriodically();
+            sendLogToServer('PDF viewer loaded');
+        });
+    </script>
+</head>
+<body>
+    <div class="title-bar">
+        
+        <button id="pdfListButton" style="margin-right: 20px;" class="left">PDF List</button>
+        <button id="toggleTrackingButton" style="margin-right: 20px;" class="left">Tracking : OFF</button>
+        <button id="infoButton" class="left">i</button>
+        <h1>PDF Viewer</h1>
+        <button id="slideshowButton" style="margin-right: 20px;" class="right">Slideshow</button>
+        <button id="stopButton" class="right">Stop Server</button>
+        
+    </div>
+    <div id="pdf-container"></div>
+    <div id="page-controls">
+        <button id="prev-page">Previous</button>
+        <span>Page: <span id="page-num">1</span> / <span id="page-count">0</span></span>
+        <button id="next-page">Next</button>
+    </div>
+    <div id="overlay"></div>
+    <div id="hotkeysPopup" class="popup">
+        <div class="popup-content">
+            <span id="closePopup" class="close">&times;</span>
+            <h2>Keyboard Hotkeys</h2>
+            <ul>
+                <li><strong>Left Arrow <kbd>&larr;</kbd>:</strong> Previous Page</li>
+                <li><strong>Right Arrow <kbd>&rarr;</kbd>:</strong> Next Page</li>
+                <li><strong>Escape <kbd>ESC &#x21B5;</kbd>:</strong> Redirect to PDF List</li>
+                <li><strong>Shift <kbd>SHIFT&#x21E7;</kbd>:</strong> Toggle Tracking</li>
+                <!-- Add more hotkeys as needed -->
+            </ul>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pdfPath = urlParams.get('pdf'); // Extract the 'pdf' query parameter
+            const pdfName = pdfPath? pdfPath.split('/').pop() : null; // Extract the PDF filename from the path
+
+            
+            let imageElement; 
+
+            if (pdfName) {
+                const pdfContainer = document.getElementById('pdf-container');
+                const pageNumSpan = document.getElementById('page-num');
+                const pageCountSpan = document.getElementById('page-count');
+                let pageNum = 1;
+                let totalPages = 0;
+                let slideshowInterval = null;
+
+                function renderPage(num) {
+                    fetch(`/pdfs/render_pdf_page/${pdfName}/${num}/`)
+                        .then(response => {
+                            if (!response.ok) {
+                                console.error('Error loading PDF page:', response.status);
+                                return;
+                            }
+                            totalPages = response.headers.get('X-Total-Pages');
+                            pageCountSpan.textContent = totalPages;
+                            return response.blob();
+                        })
+                        .then(blob => {
+                            if (blob) {
+                                const img = new Image();
+                                img.src = URL.createObjectURL(blob);
+                                // Prevent dragging
+                                img.draggable = false;
+                                img.style.userDrag = 'none'; // For WebKit browsers
+                                img.style.webkitUserDrag = 'none'; // For WebKit browsers
+
+                                img.onload = () => {
+                                    adjustImageSize(img);
+                                    
+                                
+                                    pageNumSpan.textContent = pageNum;
+                                };
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                }
+
+                function adjustImageSize(img) {
+                    const viewportWidth = window.innerWidth;
+                    const viewportHeight = window.innerHeight;
+
+                    // Calculate the scale factor to fit the image within the viewport
+                    const scaleFactor = Math.min(
+                        ((viewportWidth - 20)  ) / img.naturalWidth,
+                        ((viewportHeight - 20)  ) / img.naturalHeight
+                    );
+
+                    console.log('scaleFactor:', scaleFactor);
+
+                    // Calculate scaled dimensions
+                    const scaledWidth = img.naturalWidth * scaleFactor;
+                    const scaledHeight = img.naturalHeight * scaleFactor;
+
+                    // Clear previous page
+                    pdfContainer.innerHTML = '';
+
+                    // Set image dimensions
+                    img.style.width = `${scaledWidth}px`;
+                    img.style.height = `${scaledHeight}px`;
+
+                    // Append image to container
+                    pdfContainer.appendChild(img);
+                    
+
+                    imageElement = img;
+
+                    // Adjust the size of the container based on image size
+                    pdfContainer.style.width = `${scaledWidth}px`;
+                    pdfContainer.style.height = `${scaledHeight}px`;
+
+                    // Center the container in the viewport
+                    pdfContainer.style.position = 'fixed';
+                    pdfContainer.style.top = '50%';
+                    pdfContainer.style.left = '50%';
+                    pdfContainer.style.transform = 'translate(-50%, -50%)';
+                }
+
+                // Initial render of the first page
+                renderPage(pageNum);
+
+                window.addEventListener('resize', () => {
+                    if (pageNum > 0) { // Ensure we are on a valid page
+                        renderPage(pageNum);
+                    }
+                });
+
+                function onPrevPage() {
+                    if (pageNum <= 1) return;
+                    pageNum--;
+                    renderPage(pageNum);
+                }
+
+                function onNextPage() {
+                    if (pageNum >= totalPages) return;
+                    pageNum++;
+                    renderPage(pageNum);
+                }
+
+                function startSlideshow() {
+                    sendLogToServer('Slideshow Active');
+                    // slideshowInterval = setInterval(() => {
+                    //     if (pageNum >= totalPages) {
+                    //         pageNum = 1;
+                    //     } else {
+                    //         pageNum++;
+                    //     }
+                    //     renderPage(pageNum);
+                    // }, 3000); // Change slide every 3 seconds
+                }
+
+                function stopSlideshow() {
+                    sendLogToServer('Slideshow Inactive');
+                    // clearInterval(slideshowInterval);
+                    // slideshowInterval = null;
+                }
+
+                document.getElementById('prev-page').addEventListener('click', onPrevPage);
+                document.getElementById('next-page').addEventListener('click', onNextPage);
+                document.getElementById('slideshowButton').addEventListener('click', () => {
+                    if (slideshowInterval) {
+                        stopSlideshow();
+                        document.getElementById('slideshowButton').textContent = 'Slideshow';
+                    } else {
+                        startSlideshow();
+                        document.getElementById('slideshowButton').textContent = 'Stop Slideshow';
+                    }
+                });
+                document.getElementById('infoButton').addEventListener('click', function() {
+                    document.getElementById('hotkeysPopup').style.display = 'block';
+                });
+
+                document.getElementById('closePopup').addEventListener('click', function() {
+                    document.getElementById('hotkeysPopup').style.display = 'none';
+                });
+
+                window.addEventListener('click', function(event) {
+                    if (event.target == document.getElementById('hotkeysPopup')) {
+                        document.getElementById('hotkeysPopup').style.display = 'none';
+                    }
+                });
+
+                function pdfListRedirect() {
+                    sendLogToServer('PDF viewer is inactive');
+                    // Delay the redirect to allow the log to be sent
+                    setTimeout(() => {
+                        window.location.href = '/'; // Redirect to the index.html page
+                    }, 100); // Short delay (100 ms) to allow for log sending
+                }
+                document.getElementById('pdfListButton').addEventListener('click', function() {
+                    pdfListRedirect();
+                    //window.location.href = '/'; // Redirect to the index.html page
+                });
+                
+                window.addEventListener('beforeunload', function(event) {
+                    pdfListRedirect();
+                    //event.preventDefault(); // For older browsers
+                    //event.returnValue = ''; // For newer browsers
+                    
+                    //sendLogToServer('PDF viewer is inactive');
+                });
+                window.addEventListener('load', function() {
+                    // Check if there is any condition that triggers redirection
+                    //console.log('PDF viewer loaded',pdfName);
+                    if ( pdfName === null ) {
+                        pdfListRedirect(); // Example redirection
+                    }
+                });
+
+                document.getElementById('stopButton').addEventListener('click', function() {
+                    fetch('/stop_server/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        }
+                    }).then(response => {
+                        if (response.ok) {
+                            
+                            pdfListRedirect();
+                            alert('Server has stopped');
+                            //window.location.reload();
+                            
+                        } else {
+                            console.error('Failed to stop the server');
+                        }
+                    }).catch(error => {
+                        console.error('Error stopping server:', error);
+                    });
+                });
+                // window.addEventListener('unload', function(event) {
+                //     sendLogToServer('PDF viewer is inactive');
+                //     // Optionally, send log or handle state
+                // });
+
+
+                // window.addEventListener('popstate', function(event) {
+                //     // Check if there's a redirection happening here
+                //     //console.log('Popstate event:', event);
+                //     // if (/* condition */) {
+                //     //     window.location.href = '/anotherPage.html';
+                //     // }
+                //     sendLogToServer('Back');
+                //     pdfListRedirect();
+                // });
+
+
+                let isTracking = false;
+                function trackImageCoordinates(imageElement) {
+                    let isDragging = false;
+                    let timeoutId = null;
+                    const delay = 20; // Delay in milliseconds
+
+                    function updateCoordinates(event) {
+                        const rect = imageElement.getBoundingClientRect();
+                        const x = Math.floor(event.clientX - rect.left);
+                        const y = Math.floor(event.clientY - rect.top);
+                        sendLogToServer(`Coordinates: X=${x}, Y=${y}`);
+                    }
+
+                    function handleMouseDown(event) {
+                        isDragging = true;
+                        if (isTracking) {
+                            updateCoordinates(event);
+                        }
+                    }
+
+                    function handleMouseMove(event) {
+                        isDragging = true;
+                        if (isDragging && isTracking) {
+                            if (timeoutId) {
+                                clearTimeout(timeoutId);
+                            }
+
+                            // Set a new timeout to delay the update
+                            timeoutId = setTimeout(() => {
+                                updateCoordinates(event);
+                            }, delay);
+                        }
+                    }
+
+                    function handleMouseUp() {
+                        isDragging = false;
+                    }
+
+                    function handleTouchStart(event) {
+                        isDragging = true;
+                        if (isTracking) {
+                            updateCoordinates(event.touches[0]);
+                        }
+                    }
+
+                    function handleTouchMove(event) {
+                        if (isDragging && isTracking) {
+                            if (timeoutId) {
+                                clearTimeout(timeoutId);
+                            }
+
+                            // Set a new timeout to delay the update
+                            timeoutId = setTimeout(() => {
+                                updateCoordinates(event.touches[0]);
+                            }, delay);
+                        }
+                    }
+
+                    function handleTouchEnd() {
+                        isDragging = false;
+                    }
+
+                    // Attach event listeners
+                    function startTracking() {
+                        //imageElement.addEventListener('mousedown', handleMouseDown);
+                        imageElement.addEventListener('mousemove', handleMouseMove);
+                        //imageElement.addEventListener('mouseup', handleMouseUp);
+                        imageElement.addEventListener('touchstart', handleTouchStart);
+                        imageElement.addEventListener('touchmove', handleTouchMove);
+                        imageElement.addEventListener('touchend', handleTouchEnd);
+                        document.getElementById('overlay').style.display = 'block'; // Show overlay
+                    }
+
+                    // Detach event listeners
+                    function stopTracking() {
+                        //imageElement.removeEventListener('mousedown', handleMouseDown);
+                        imageElement.removeEventListener('mousemove', handleMouseMove);
+                        //imageElement.removeEventListener('mouseup', handleMouseUp);
+                        imageElement.removeEventListener('touchstart', handleTouchStart);
+                        imageElement.removeEventListener('touchmove', handleTouchMove);
+                        imageElement.removeEventListener('touchend', handleTouchEnd);
+                        document.getElementById('overlay').style.display = 'none'; // Hide overlay
+                    }
+
+                    if (isTracking) {
+                        isTracking = false;
+                        stopTracking();
+                        
+                        console.log('Tracking stopped', isTracking);
+                        sendLogToServer('Tracking stopped');
+                        document.getElementById('toggleTrackingButton').textContent = 'Tracking : OFF';
+                        document.getElementById('toggleTrackingButton').style.backgroundColor = '#555';
+                    } else {
+                        isTracking = true;
+                        startTracking();
+                        console.log('Tracking started', isTracking);
+                        sendLogToServer('Tracking started');
+                        document.getElementById('toggleTrackingButton').textContent = 'Tracking : ON';
+                        document.getElementById('toggleTrackingButton').style.backgroundColor = '#9e978e';
+                    }
+
+                    //isTracking = !isTracking; // Toggle the state
+                }
+
+                // function toggleTracking() {
+                //     if (isTracking) {
+                //         // Stop tracking
+                //         imageElement.removeEventListener('mousedown', handleMouseDown);
+                //         imageElement.removeEventListener('mousemove', handleMouseMove);
+                //         imageElement.removeEventListener('mouseup', handleMouseUp);
+                //         imageElement.removeEventListener('touchstart', handleTouchStart);
+                //         imageElement.removeEventListener('touchmove', handleTouchMove);
+                //         imageElement.removeEventListener('touchend', handleTouchEnd);
+                //         console.log('Tracking stopped');
+                //     } else {
+                //         // Start tracking
+                //         trackImageCoordinates(imageElement);
+                //         console.log('Tracking started');
+                //     }
+                //     isTracking = !isTracking;
+                // }
+                //document.getElementById('toggleTrackingButton').addEventListener('click', toggleTracking);
+                document.getElementById('toggleTrackingButton').addEventListener('click', () => {
+                    trackImageCoordinates(imageElement);
+                });
+                // Show page controls when mouse is moving
+                let controlsVisible = false;
+                const pageControls = document.getElementById('page-controls');
+
+                function showControls() {
+                    pageControls.classList.add('visible');
+                    controlsVisible = true;
+                    clearTimeout(hideTimeout); // Clear hide timeout if any
+                    hideTimeout = setTimeout(hideControls, 2000); // Hide after 2 seconds of inactivity
+                }
+
+                function hideControls() {
+                    pageControls.classList.remove('visible');
+                    controlsVisible = false;
+                }
+
+                let hideTimeout;
+                document.addEventListener('mousemove', showControls);
+
+                // Initially hide controls if the user has been inactive
+                hideControls();
+
+                // Add keydown event listener for arrow keys
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'ArrowLeft') {
+                        onPrevPage();
+                    } else if (event.key === 'ArrowRight') {
+                        onNextPage();
+                    } else if (event.key === 'Escape') {
+                        pdfListRedirect();
+                    } else if (event.key === 'Shift') {
+                        trackImageCoordinates(imageElement);
+                    }
+                });
+            }
+        });
+
+    </script>
+</body>
+</html>

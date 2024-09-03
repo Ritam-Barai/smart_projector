@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-export PATH=$PATH:$HOME/smart_projector/server_proj/projview
-FILE_PATH=$HOME/smart_projector
+export PATH=$PATH:/home/pi/smart_projector/server_proj/projview
+FILE_PATH=/home/pi/smart_projector
 #echo "$PATH"
 
 cd "$FILE_PATH" || exit

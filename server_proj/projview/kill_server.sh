@@ -18,6 +18,8 @@ for PID in $PIDS; do
     # Kill the process
     kill -SIGTERM $PID
     echo "Server on port 8000 has been stopped."
+    sleep 1
+    openbox --exit
     else
     echo "No python process is running on port 8000."
     fi

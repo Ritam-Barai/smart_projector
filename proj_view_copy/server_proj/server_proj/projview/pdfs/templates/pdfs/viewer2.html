@@ -1,0 +1,180 @@
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        #pdf-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #f0f0f0;
+        }
+        img {
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+        #page-controls {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+        #page-controls button {
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Viewer</h1>
+    <div id="pdf-container"></div>
+    <div id="page-controls">
+        <button id="prev-page">Previous</button>
+        <span>Page: <span id="page-num">1</span> / <span id="page-count">0</span></span>
+        <button id="next-page">Next</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pdfName = urlParams.get('pdf'); // Extract the 'pdf' query parameter
+            if (pdfName) {
+                const pdfContainer = document.getElementById('pdf-container');
+                const pageNumSpan = document.getElementById('page-num');
+                const pageCountSpan = document.getElementById('page-count');
+                let pageNum = 1;
+
+                function renderPage(num) {
+                    const img = new Image();
+                    img.src = `/pdfs/render_pdf_page/${pdfName}/${num}/`;
+                    img.onload = () => {
+                        pdfContainer.innerHTML = ''; // Clear previous page
+                        pdfContainer.appendChild(img);
+                        pageNumSpan.textContent = num;
+                    };
+                }
+
+                function onPrevPage() {
+                    if (pageNum <= 1) return;
+                    pageNum--;
+                    renderPage(pageNum);
+                }
+
+                function onNextPage() {
+                    if (pageNum >= parseInt(pageCountSpan.textContent)) return;
+                    pageNum++;
+                    renderPage(pageNum);
+                }
+
+                // Fetch total number of pages
+                fetch(`/pdfs/render_pdf_page/${pdfName}/1/`)
+                    .then(response => {
+                        if (response.ok) {
+                            // Update page count with a placeholder, since server does not return total pages
+                            pageCountSpan.textContent = 'Unknown';
+                            renderPage(pageNum);
+
+                            document.getElementById('prev-page').addEventListener('click', onPrevPage);
+                            document.getElementById('next-page').addEventListener('click', onNextPage);
+                        } else {
+                            console.error('Error loading PDF:', response.status);
+                        }
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #pdf-viewer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .pagination {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PDF Viewer</h1>
+    <div id="pdf-viewer"></div>
+    <div class="pagination">
+        <button id="prevPage">Previous</button>
+        <span id="pageNumber">Page 1</span>
+        <button id="nextPage">Next</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pdfPath= urlParams.get('pdf');
+            const pdfName = pdfPath.split('/').pop(); // Extract the PDF filename from the URL
+            if (pdfName) {
+                let currentPage = 1;
+                const totalPages = 10; // Placeholder for total number of pages
+
+                function renderPage(pageNumber) {
+                    const baseUrl = window.location.origin;
+                    const url = `${baseUrl}/pdfs/render_pdf_page/${encodeURIComponent(pdfName)}/${pageNumber}/`;
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.onload = function() {
+                        document.getElementById('pdf-viewer').innerHTML = ''; // Clear previous page
+                        document.getElementById('pdf-viewer').appendChild(img);
+                        document.getElementById('pageNumber').textContent = `Page ${pageNumber}`;
+                    };
+                    img.onerror = function() {
+                        console.error('Failed to load image.');
+                    };
+                }
+
+                document.getElementById('prevPage').addEventListener('click', function() {
+                    if (currentPage > 1) {
+                        currentPage--;
+                        renderPage(currentPage);
+                    }
+                });
+
+                document.getElementById('nextPage').addEventListener('click', function() {
+                    if (currentPage < totalPages) { // Adjust totalPages as necessary
+                        currentPage++;
+                        renderPage(currentPage);
+                    }
+                });
+
+                renderPage(currentPage); // Render the first page initially
+            }
+        });
+    </script>
+</body>
+</html>

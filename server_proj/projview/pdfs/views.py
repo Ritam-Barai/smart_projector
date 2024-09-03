@@ -1,7 +1,7 @@
 # pdfs/views.py
 
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.shortcuts import render,get_object_or_404
+from django.http import JsonResponse, HttpResponse
 from .models import PDF
 from .forms import PDFForm
 from subprocess import call
@@ -11,14 +11,70 @@ from django.conf import settings
 from django.db import transaction
 from django.contrib.sessions.models import Session
 from django.views.decorators.csrf import csrf_exempt
+from .pdf_load import viewer
+
+#from pdf2image import convert_from_path
+from io import BytesIO
+from PIL import Image
+import logging
 import shutil
 import os
 import signal 
 import subprocess
+import fitz
+import re
+
+
+logger = logging.getLogger(__name__)
+
+#viewer.run()
 
 def index(request):
     return render(request, 'pdfs/index.html')
 
+def pdf_viewer(request):
+    return render(request, 'pdfs/viewer.html')
+
+
+def render_pdf_page_view(request, pdf_name, page_number):
+    
+    return viewer.render_pdf_page(pdf_name, page_number)
+'''
+def render_pdf_page(request, pdf_name, page_number):
+    # Ensure the page_number is an integer
+    page_number = int(page_number)
+
+    # Build the path to the PDF
+    pdf_path = os.path.join('media', 'pdfs', pdf_name)
+    
+    # Check if the PDF file exists
+    if not os.path.exists(pdf_path):
+        return HttpResponse(status=404)
+
+    # Open the PDF using PyMuPDF
+    doc = fitz.open(pdf_path)
+    total_pages = doc.page_count
+
+    # Check if the requested page number is within range
+    if page_number < 1 or page_number > total_pages:
+        return HttpResponse(status=404)
+
+    # Select the specified page
+    page = doc.load_page(page_number - 1)  # PyMuPDF pages are 0-indexed
+
+    # Render the page to an image
+    pix = page.get_pixmap()
+    
+    # Convert the image to a format suitable for HTTP response
+    img_io = BytesIO()
+    img_io.write(pix.tobytes('png'))
+    img_io.seek(0)
+
+    # Include total pages in response headers
+    response = HttpResponse(img_io, content_type='image/png')
+    response['X-Total-Pages'] = total_pages
+    return response
+'''
 '''
 def upload_pdf(request):
     if request.method == 'POST':
@@ -44,6 +100,76 @@ def upload_pdf(request):
                 return JsonResponse({'error': 'File already exists'}, status=400)
     return JsonResponse({'error': 'Invalid request'}, status=400)
 '''
+
+@csrf_exempt  # Exempt from CSRF verification
+def log_tab_event(request):
+    if request.method == 'POST':
+        '''
+        event = request.POST.get('event', '')
+        if event:
+            if event == 'PDF viewer is inactive':
+                print("PDF viewer is inactive")
+            elif event == 'PDF viewer is active':
+                print("PDF viewer is active")
+            elif event == 'PDF viewer loaded':
+                print("PDF viewer loaded")
+            return JsonResponse({'status': 'success'})
+        return JsonResponse({'status': 'error', 'message': 'No event data'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
+    '''
+        # Process the data from request.body
+        data = request.POST.get('event', 'No event message')
+        
+        # Log the message or perform other actions
+        print(f'Log Message: {data}')
+        
+        if( data == 'PDF viewer loaded'):
+            if( viewer.subprocess_active == False):
+                viewer.subprocess_active = True
+                viewer.new_slideshow()
+        #elif( data == 'PDF viewer is inactive'):
+            #viewer.slideshow_active = False
+            #viewer.slideshow_process = False
+            #viewer.terminate()
+        elif( data == 'Slideshow Active' and not viewer.slideshow_process):
+            viewer.slideshow_active = True
+            viewer.slideshow_process = True
+            viewer.handle_new_flag("START")
+        elif( data == 'Slideshow Inactive' and viewer.slideshow_process):
+            viewer.slideshow_active = False
+            viewer.slideshow_process = False
+            viewer.handle_new_flag("STOP")
+            viewer.terminate()
+            
+        elif( data == 'PDF viewer is active' and viewer.slideshow_active):
+            viewer.handle_new_flag("SHOW")
+        elif( data == 'Tracking started' and viewer.slideshow_active):
+            viewer.pointer_mode = True
+            viewer.handle_new_flag("POINT")
+            if( data[:12] == 'Coordinates:'):
+                extract_coordinates(data[13:])
+        elif( data == 'Tracking stopped'):
+            viewer.pointer_mode = False
+
+        return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'error'}, status=400)
+
+def extract_coordinates(data):
+    # Regular expression to find x and y values
+    pattern = r"X=(\d+), Y=(\d+)"
+    match = re.search(pattern, data)
+    
+    if match:
+        # Extract x and y values
+        x = int(match.group(1))
+        y = int(match.group(2))
+        
+        # Assign to pointer_position array
+        viewer.pointer_position = [x, y]
+        
+    else:
+        # Handle case where pattern is not found
+        raise ValueError("Coordinates not found in the data string")
 
 def upload_pdf(request):
     if request.method == 'POST':
@@ -98,6 +224,7 @@ def stop_server(request):
         script_path = f'{settings.BASE_DIR}/kill_server.sh'
         
     try:
+        PDF.objects.all().delete()
         proc = subprocess.Popen(['bash', script_path], preexec_fn=os.setsid)
         response = {'status': 'Server stopping...','code': 200}
         return JsonResponse(response)

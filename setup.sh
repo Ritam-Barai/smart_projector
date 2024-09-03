@@ -37,7 +37,7 @@ date
 sudo apt-get update
 sudo apt-get upgrade -y
 sudo apt-get install --upgrade python3-pip
-sudo apt install lsof xinit openbox python3-tk -y
+sudo apt install lsof xinit xorg python-xdg openbox python3-tk mupdf net-tools libmicrohttpd-dev -y
 
 
 cd smart_projector || exit

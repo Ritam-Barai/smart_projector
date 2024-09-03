@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Upload</title>
+    <style>
+        html, body {
+            font-family: Arial, sans-serif;
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            padding-top: 60px;
+            
+        }
+        
+        .title-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box; /* Include padding in width calculation */
+            z-index: 1000; /* Ensure it's above other content */
+        }
+        .title-bar button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .title-bar button:hover {
+            background-color: #777;
+        }
+        .container {
+            margin: 60px;
+            
+        }
+        #uploadDialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        #serverStatus {
+            /*padding-top: 30px;*/
+            margin: 10px;
+        }
+        #fileDropArea {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .title-bar h1 {
+            font-size: 18px; /* Reduced font size */
+            margin: 0;
+            flex-grow: 1;
+            text-align: center; /* Center the title */
+        }
+    </style>
+    <!-- Include CSRF token here -->
+    <script>
+        // Function to get CSRF cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</head>
+<body>
+    <div class="title-bar">
+        <button id="uploadButton" class="left">Upload PDF</button>
+        <h1>PDF Viewer</h1>
+        <button id="stopButton" class="right">Stop Server</button>
+    </div>
+    <div id="serverStatus">Server is running</div>
+    <div class="container">
+        <h1>Uploaded PDFs:</h1>
+        
+        <div id="pdfList"></div>
+    </div>
+    <div id="overlay"></div>
+    <div id="uploadDialog">
+        <h2>Drag and Drop PDF Files Here</h2>
+        <div id="fileDropArea">Click or drop files here...</div>
+    </div>
+    <input type="file" id="fileInput" style="display: none;" multiple>
+
+    {% csrf_token %}  <!-- Include CSRF token here -->
+
+    <script>
+        let statusCheckInterval = setInterval(checkServerStatus, 5000);
+
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('uploadDialog').style.display = 'block';
+        });
+
+        document.getElementById('overlay').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('uploadDialog').style.display = 'none';
+        });
+
+        const fileDropArea = document.getElementById('fileDropArea');
+        fileDropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            fileDropArea.style.backgroundColor = '#f0f0f0';
+        });
+
+        fileDropArea.addEventListener('dragleave', () => {
+            fileDropArea.style.backgroundColor = 'white';
+        });
+
+        fileDropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileDropArea.style.backgroundColor = 'white';
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        const fileInput = document.getElementById('fileInput');
+        fileDropArea.addEventListener('click', () => {
+            fileInput.click(); // Programmatically click the hidden file input
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const files = event.target.files;
+            handleFiles(files); // Use the same function to handle files
+        });
+
+        const HOST_IP = "{{ host_ip }}";
+
+        // Function to handle file upload
+        function handleFiles(files) {
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('file', file);  // Use 'file' as the key
+            }
+
+            fetch('/pdfs/upload/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')  // Include CSRF token
+                }
+            }).then(response => response.json())
+            .then(data => {
+                document.getElementById('overlay').style.display = 'none';
+                document.getElementById('uploadDialog').style.display = 'none';
+                fetchAndDisplayPDFs(); // Reload PDF list after upload
+            }).catch(error => console.error('Error:', error));
+        }
+
+        // Function to fetch and display PDFs after upload
+        function fetchAndDisplayPDFs() {
+            fetch('/pdfs/')
+                .then(response => response.json())
+                .then(data => displayPDFs(data.pdfs))
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Fetch and display existing PDFs on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/pdfs/')
+                .then(response => response.json())
+                .then(data => displayPDFs(data.pdfs))
+                .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('stopButton').addEventListener('click', function() {
+            fetch('/stop_server/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Server has stopped');
+                    alert('Server has stopped');
+                    window.location.reload();
+                } else {
+                    console.error('Failed to stop the server');
+                }
+            }).catch(error => {
+                console.error('Error stopping server:', error);
+            });
+        });
+
+        function displayPDFs(pdfs) {
+            const pdfList = document.getElementById('pdfList');
+            pdfList.innerHTML = '';
+            pdfs.forEach(pdf => {
+                const pdfName = pdf.name.split('/').pop();  // Remove 'pdf/' prefix
+                const link = document.createElement('a');
+                link.href = `viewer?pdf=${encodeURIComponent(pdf.name)}`;
+                link.textContent = pdfName;
+                link.target = '_self';
+
+                // Add a click event listener to track the opening of the new tab
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();  // Prevent default behavior
+                    /*
+                    // Open the PDF in a new tab
+                    const newTab = window.open(link.href, '_blank');
+                    
+                    // Log to Django server when the tab is opened
+                    if (newTab) {
+                        sendLogToServer('New tab opened');
+
+                        // Set up an interval to check if the tab is closed
+                        const checkTabClosed = setInterval(() => {
+                            if (newTab.closed) {
+                                sendLogToServer('New tab closed');
+                                clearInterval(checkTabClosed);  // Stop checking once closed
+                            }
+                        }, 500);  // Check every 500ms
+                    } else {
+                        console.error('Failed to open new tab');
+                    }*/
+
+                    //event.preventDefault();  // Prevent default behavior
+
+                    // Open the PDF in the same tab
+                    window.location.href = link.href;
+
+                    // Log when the PDF viewer is active
+                    //sendLogToServer('PDF viewer active');
+                });
+
+                pdfList.appendChild(link);
+                pdfList.appendChild(document.createElement('br'));
+            });
+        }
+
+         
+        // JavaScript function to delete files on server when leaving the page
+        window.addEventListener('beforeunload', function(event) {
+            /*
+            fetch('/delete_media_files/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ deleteAll: true }) // Example payload
+            }).then(response => {
+                console.log('Files deleted successfully');
+            }).catch(error => {
+                console.error('Error deleting files:', error);
+            });*/
+            sendLogToServer('PDF viewer is inactive');
+        });
+        document.addEventListener('visibilitychange', function() {
+            // if (document.visibilityState === 'hidden') {
+            //     console.log('User navigated away or minimized the page');
+            //     // Optionally, send log or handle state
+            //}
+            sendLogToServer('PDF viewer is inactive');
+        });
+        
+        // Function to send log messages to the server
+        function sendLogToServer(message) {
+            const url = '/log_tab_event/';
+            const data = new URLSearchParams({ 'event': message });
+
+            // Try using fetch first
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken') // Ensure this function returns the correct CSRF token
+                },
+                body: data
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => console.log('Log event sent:', data))
+            .catch(error => {
+                //console.error('Error sending log event via fetch:', error);
+                // Fallback to sendBeacon if fetch fails
+                if (navigator.sendBeacon) {
+                    const success = navigator.sendBeacon(url, data);
+                    if (success) {
+                        console.log('Log event failed via fetch; sent via sendBeacon');
+                    } else {
+                        console.error('Error sending log event via sendBeacon or fetch:', error);
+                    }
+                }
+            });
+        }
+        
+        function checkServerStatus() {
+            fetch('/health_check/')
+                .then(response => {
+                    if (response.ok) {
+                        //sendLogToServer('PDF viewer is inactive')
+                        document.getElementById('serverStatus').innerText = 'Server is running';
+                    } else {
+                        document.getElementById('serverStatus').innerText = 'Server might be having issues';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('serverStatus').innerText = 'Server is down';
+                    clearInterval(statusCheckInterval);
+                    window.location.reload();
+                });
+        }
+
+        setInterval(checkServerStatus, 10000);
+
+    </script>
+</body>
+</html>

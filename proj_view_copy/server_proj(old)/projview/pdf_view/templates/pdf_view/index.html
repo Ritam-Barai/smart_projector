@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .title-bar {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+        }
+        #uploadDialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        #overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        #fileDropArea {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="title-bar">
+        <button id="uploadButton">Upload PDF</button>
+    </div>
+    <div class="container">
+        <h1>Uploaded PDFs</h1>
+        <div id="pdfList"></div>
+    </div>
+    <div id="overlay"></div>
+    <div id="uploadDialog">
+        <h2>Drag and Drop PDF Files Here</h2>
+        <div id="fileDropArea">Drop files here...</div>
+    </div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('uploadDialog').style.display = 'block';
+        });
+
+        document.getElementById('overlay').addEventListener('click', function() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('uploadDialog').style.display = 'none';
+        });
+
+        const fileDropArea = document.getElementById('fileDropArea');
+        fileDropArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            fileDropArea.style.backgroundColor = '#f0f0f0';
+        });
+
+        fileDropArea.addEventListener('dragleave', () => {
+            fileDropArea.style.backgroundColor = 'white';
+        });
+
+        fileDropArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            fileDropArea.style.backgroundColor = 'white';
+            const files = event.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            const formData = new FormData();
+            for (const file of files) {
+                formData.append('pdfs', file);
+            }
+
+            fetch('/upload/', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  document.getElementById('overlay').style.display = 'none';
+                  document.getElementById('uploadDialog').style.display = 'none';
+                  displayPDFs(data.pdfs);
+              }).catch(error => console.error('Error:', error));
+        }
+
+        function displayPDFs(pdfs) {
+            const pdfList = document.getElementById('pdfList');
+            pdfList.innerHTML = '';
+            pdfs.forEach(pdf => {
+                const link = document.createElement('a');
+                link.href = pdf.url;
+                link.textContent = pdf.name;
+                link.target = '_blank';
+                pdfList.appendChild(link);
+                pdfList.appendChild(document.createElement('br'));
+            });
+        }
+    </script>
+</body>
+</html>

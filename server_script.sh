@@ -1,9 +1,10 @@
 #!/bin/bash
 
 
-export PATH=$PATH:$HOME/smart_projector/server_proj/projview
-FILE_PATH=$HOME/smart_projector/server_proj/projview
+export PATH=$PATH:/home/pi/smart_projector/server_proj/projview
+FILE_PATH=/home/pi/smart_projector/server_proj/projview
 #echo "$PATH"
+#DJANGO_URL="http://10.69.69.1:8000"
 
 # Function to get IP address using ip command
 get_ip_with_ip() {
@@ -40,7 +41,7 @@ sed -i "s/^HOST_IP = .*/HOST_IP = '$IP_ADDR'/" $SETTINGS_FILE
 
 echo "Updated HOST_IP to $IP_ADDR in $SETTINGS_FILE"
 
-VENV_PATH="$HOME/smart_projector/env/bin/activate"
+VENV_PATH="/home/pi/smart_projector/env/bin/activate"
 if [ -f "$VENV_PATH" ]; then
     echo "Activating the virtual environment..."
     source "$VENV_PATH"
@@ -48,15 +49,32 @@ else
     echo "Virtual environment not found. Skipping activation."
 fi
 cd "$FILE_PATH" || exit
+DJANGO_URL="http://$IP_ADDR:8000"
 
 
+python3 manage.py runserver "$IP_ADDR:8000" &
+sleep 1
+echo "Starting server!"
+:<<COMMENT
+export XAUTHORITY=/home/pi/.Xauthority
+while true;do
+  if curl --output /dev/null --silent --head --fail "$DJANGO_URL";then
+    #startx -- -nocursor
+    startx
+    sleep 1
+    break
+  else
+    sleep 1
+  fi
+done 
+#sudo systemctl stop hostapd
+#sudo truncate -s 0 /var/lib/misc/udhcpd.leases
+COMMENT
+#sleep 1
 
-python3 manage.py runserver "$IP_ADDR:8000"
-sudo systemctl stop hostapd
-sudo truncate -s 0 /var/lib/misc/udhcpd.leases
-
-sleep 5
-
-openbox --exit
-sudo systemctl start hostapd
-sudo systemctl restart udhcpd
+#openbox --exit
+#reboot
+#sudo systemctl start hostapd
+sudo systemctl restart lighttpd
+sudo systemctl restart hostapd
+sudo systemctl restart dnsmasq

@@ -1,0 +1,26 @@
+/* Set the background color of the entire page to black */
+body {
+    background-color: black;
+    color: white; /* Optional: Set text color to white for better readability */
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif; /* Optional: Set a default font */
+}
+
+
+/* Optional: Define a custom cursor image */
+@keyframes red-cursor {
+    0% { background-color: red; }
+    100% { background-color: red; }
+}
+
+.cursor {
+    width: 16px;
+    height: 16px;
+    background-color: red;
+    border-radius: 50%;
+    position: absolute;
+    pointer-events: none;
+    z-index: 9999;
+}
+

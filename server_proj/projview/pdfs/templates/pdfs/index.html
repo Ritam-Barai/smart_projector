@@ -1,5 +1,3 @@
-<!-- pdfs/templates/pdfs/index.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,19 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Upload</title>
     <style>
-        body {
+        html, body {
             font-family: Arial, sans-serif;
+            height: 100%;
+            margin: 0;
         }
+        body {
+            padding-top: 60px;
+            
+        }
+        
         .title-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
             background-color: #333;
             color: white;
-            padding: 30px;
+            height: 8vh;
+            padding: 10px 20px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: space-between; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+            z-index: 1000;
+        }
+        .title-bar button {
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 1vh 2vw; /* Relative padding */
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: clamp(0.5rem, 2vw, 1.2rem); /* Minimum 1rem, preferred 2vw, maximum 1.5rem */
+            max-height: 5vh; /* Maximum height */
+            max-width: 15vw; /* Maximum width */
+
+        }
+        .title-bar button:hover {
+            background-color: #777;
         }
         .container {
-            margin: 50px;
+            margin: 60px;
         }
         #uploadDialog {
             display: none;
@@ -32,8 +60,14 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
         }
-        
-        
+        a:link {
+        color: black;  /* Set unvisited links to black */
+        text-decoration: none;  /* Remove underline */
+        }
+        a:visited {
+        color: black;  /* Set this to the same color as your unvisited links */
+        text-decoration: none;  /* Remove underline */
+        }
         #overlay {
             display: none;
             position: fixed;
@@ -44,11 +78,20 @@
             background: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
+        #serverStatus {
+            margin: 10px;
+        }
         #fileDropArea {
             border: 2px dashed #ccc;
             padding: 20px;
             text-align: center;
             cursor: pointer;
+        }
+        .title-bar h1 {
+            font-size: 2vw; /* Relative font size for scaling */
+            margin: 0;
+            flex-grow: 1;
+            text-align: center;
         }
     </style>
     <!-- Include CSRF token here -->
@@ -68,17 +111,75 @@
             }
             return cookieValue;
         }
+
+        function checkCaptivePortal() {
+            const currentUrl = window.location.href;
+            const captivePortalUrl = 'http://127.0.0.1:8000/';
+            if (currentUrl.includes(captivePortalUrl)) {
+                const userAgent = navigator.userAgent;
+                const isBrowser = false;
+                if (userAgent.includes('Chrome')) {
+                    //alert('You are using Chrome.');
+                    isBrowser = true;
+                } else if (userAgent.includes('Firefox')) {
+                    //alert('You are using Firefox.');
+                    isBrowser = true;   
+                } else if (userAgent.includes('Android')) {
+                    alert('You are using Android.');
+                } else if (userAgent.includes('iPhone')) {
+                    alert('You are using iPhone.');
+                    isBrowser = true;
+                } else {
+                    alert('For the best experience, please use Chrome or Firefox to open' + captivePortalUrl);
+                }
+        
+                const openInBrowserLink = document.createElement('a');
+                openInBrowserLink.href = captivePortalUrl;
+                openInBrowserLink.textContent = 'Open in Browser';
+                openInBrowserLink.style.display = 'block';
+                openInBrowserLink.style.marginTop = '10px';
+                openInBrowserLink.style.color = '#007BFF';
+                openInBrowserLink.style.fontSize = '2vw';
+                openInBrowserLink.style.textAlign = 'center';
+                openInBrowserLink.style.textDecoration = 'none';
+                openInBrowserLink.style.cursor = 'pointer';
+
+                // openInBrowserLink.target = '_blank';
+                // openInBrowserLink.rel = 'noopener noreferrer'; // Security measure
+
+                openInBrowserLink.addEventListener('click', function(event) {
+                event.preventDefault();
+                const a = document.createElement('a');
+                a.href = captivePortalUrl;
+                if (isBrowser) {
+                    a.target = '_self';
+                    a.rel = 'noopener noreferrer'; // Security measure
+                    a.click();
+                } else {
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer'; // Security measure
+                    a.click();
+                    window.close();
+                }
+                
+                
+                });
+
+                document.body.appendChild(openInBrowserLink);
+            }
+        }
     </script>
 </head>
-<body>
+<body onload="checkCaptivePortal()">
     <div class="title-bar">
         <button id="uploadButton" class="left">Upload PDF</button>
+        <h1>PDF Viewer</h1>
         <button id="stopButton" class="right">Stop Server</button>
     </div>
-    <div id="serverStatus">Server is running</div>
+    
     <div class="container">
+        <div id="serverStatus">Server is running</div>
         <h1>Uploaded PDFs:</h1>
-        <h3>Login cmd : ssh -X  pi@{{host_ip}}  (passwd : 1123)</h3>
         
         <div id="pdfList"></div>
     </div>
@@ -92,9 +193,8 @@
     {% csrf_token %}  <!-- Include CSRF token here -->
 
     <script>
+        let statusCheckInterval = setInterval(checkServerStatus, 5000);
 
-let statusCheckInterval = setInterval(checkServerStatus, 5000);
-        // JavaScript code for handling events and making AJAX requests
         document.getElementById('uploadButton').addEventListener('click', function() {
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('uploadDialog').style.display = 'block';
@@ -121,6 +221,7 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
             const files = event.dataTransfer.files;
             handleFiles(files);
         });
+
         const fileInput = document.getElementById('fileInput');
         fileDropArea.addEventListener('click', () => {
             fileInput.click(); // Programmatically click the hidden file input
@@ -130,8 +231,6 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
             const files = event.target.files;
             handleFiles(files); // Use the same function to handle files
         });
-
-
 
         const HOST_IP = "{{ host_ip }}";
 
@@ -164,6 +263,7 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
                 .then(data => displayPDFs(data.pdfs))
                 .catch(error => console.error('Error:', error));
         }
+
         // Fetch and display existing PDFs on page load
         document.addEventListener('DOMContentLoaded', function() {
             fetch('/pdfs/')
@@ -171,6 +271,7 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
                 .then(data => displayPDFs(data.pdfs))
                 .catch(error => console.error('Error:', error));
         });
+
         document.getElementById('stopButton').addEventListener('click', function() {
             fetch('/stop_server/', {
                 method: 'POST',
@@ -182,6 +283,7 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
                 if (response.ok) {
                     console.log('Server has stopped');
                     alert('Server has stopped');
+                    //const pdfList = document.getElementById('pdfList');
                     window.location.reload();
                 } else {
                     console.error('Failed to stop the server');
@@ -191,85 +293,140 @@ let statusCheckInterval = setInterval(checkServerStatus, 5000);
             });
         });
 
-
         function displayPDFs(pdfs) {
             const pdfList = document.getElementById('pdfList');
             pdfList.innerHTML = '';
             pdfs.forEach(pdf => {
+                const pdfName = pdf.name.split('/').pop();  // Remove 'pdf/' prefix
+                
                 const link = document.createElement('a');
-                link.href = pdf.url;
-                link.textContent = pdf.name;
-                link.target = '_blank';
+                link.href = `viewer?pdf=${encodeURIComponent(pdf.name)}`;
+                link.textContent = pdfName;
+                link.target = '_self';
+
+                // const pdfItem = document.createElement('a');  // Use a div instead of a link
+                // pdfItem.textContent = pdfName;
+                // pdfItem.style.cursor = 'pointer';  // Change cursor to pointer to indicate it's clickable
+                
+                // Add a click event listener to track the opening of the new tab
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();  // Prevent default behavior
+                    // const url = `viewer?pdf=${encodeURIComponent(pdf.name)}`;
+                    // window.location.href = url;  // Navigate to the PDF viewer
+                    /*
+                    // Open the PDF in a new tab
+                    const newTab = window.open(link.href, '_blank');
+                    
+                    // Log to Django server when the tab is opened
+                    if (newTab) {
+                        sendLogToServer('New tab opened');
+
+                        // Set up an interval to check if the tab is closed
+                        const checkTabClosed = setInterval(() => {
+                            if (newTab.closed) {
+                                sendLogToServer('New tab closed');
+                                clearInterval(checkTabClosed);  // Stop checking once closed
+                            }
+                        }, 500);  // Check every 500ms
+                    } else {
+                        console.error('Failed to open new tab');
+                    }*/
+
+                    //event.preventDefault();  // Prevent default behavior
+
+                    // Open the PDF in the same tab
+                   window.location.href = link.href;
+
+                    // Log when the PDF viewer is active
+                    //sendLogToServer('PDF viewer active');
+                });
+
                 pdfList.appendChild(link);
                 pdfList.appendChild(document.createElement('br'));
+                // pdfList.appendChild(pdfItem);
             });
         }
 
+         
         // JavaScript function to delete files on server when leaving the page
         window.addEventListener('beforeunload', function(event) {
-            // Send a POST request to your Django view to delete files
+            /*
             fetch('/delete_media_files/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // Include CSRF token if your server requires it
                     'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify({ deleteAll: true }) // Example payload
             }).then(response => {
-                // Handle response as needed
                 console.log('Files deleted successfully');
-                //fetchAndDisplayPDFs(); // Reload PDF list after deletion
             }).catch(error => {
                 console.error('Error deleting files:', error);
-            });
+            });*/
+            sendLogToServer('PDF viewer is inactive');
         });
+        document.addEventListener('visibilitychange', function() {
+            // if (document.visibilityState === 'hidden') {
+            //     console.log('User navigated away or minimized the page');
+            //     // Optionally, send log or handle state
+            //}
+            sendLogToServer('PDF viewer is inactive');
+        });
+        
+        // Function to send log messages to the server
+        function sendLogToServer(message) {
+            const url = '/log_tab_event/';
+            const data = new URLSearchParams({ 'event': message });
 
-        // Function to get CSRF token from cookies (example implementation)
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.startsWith(name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
+            // Try using fetch first
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken') // Ensure this function returns the correct CSRF token
+                },
+                body: data
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => console.log('Log event sent:', data))
+            .catch(error => {
+                //console.error('Error sending log event via fetch:', error);
+                // Fallback to sendBeacon if fetch fails
+                if (navigator.sendBeacon) {
+                    const success = navigator.sendBeacon(url, data);
+                    if (success) {
+                        console.log('Log event failed via fetch; sent via sendBeacon');
+                    } else {
+                        console.error('Error sending log event via sendBeacon or fetch:', error);
                     }
                 }
-            }
-            return cookieValue;
+            });
         }
         
         function checkServerStatus() {
-            fetch('/health_check/') // Assuming you have a simple endpoint to check server status
+            fetch('/health_check/')
                 .then(response => {
                     if (response.ok) {
-                        console.log("Server is running.");
+                        //sendLogToServer('PDF viewer is inactive')
                         document.getElementById('serverStatus').innerText = 'Server is running';
                     } else {
-                        // If the server responds, but not with a 200 OK
-                        console.error("Server might be having issues.");
                         document.getElementById('serverStatus').innerText = 'Server might be having issues';
                     }
                 })
                 .catch(error => {
-                    console.error("Server is down.", error);
                     document.getElementById('serverStatus').innerText = 'Server is down';
-                    clearInterval(statusCheckInterval); // Stop further checks
+                    clearInterval(statusCheckInterval);
                     window.location.reload();
                 });
         }
 
-        // Call checkServerStatus() every 10 seconds
         setInterval(checkServerStatus, 10000);
 
-
-        // Fetch and display existing PDFs on page load
-        fetch('/pdfs/')
-            .then(response => response.json())
-            .then(data => displayPDFs(data.pdfs))
-            .catch(error => console.error('Error:', error));
     </script>
 </body>
 </html>
